@@ -26,7 +26,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import heroVideo from "@/assets/chatbot.mp4";
-import rightSideImg from "@/assets/rightSide_img.png";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -534,15 +533,7 @@ function Home() {
               </p>
             </div>
 
-            <div className="relative mx-auto w-full max-w-[380px] lg:mx-0 lg:mt-2 lg:max-w-[460px]">
-              <div className="relative surface-card -rotate-[1.5deg] overflow-hidden rounded-[1.75rem] p-2 shadow-lift">
-                <img
-                  src={rightSideImg}
-                  alt="Customer journey progress illustration"
-                  className="size-full w-full rounded-[1.35rem] object-cover"
-                />
-              </div>
-            </div>
+            {/* Right-side illustration removed per design request */}
           </div>
 
           <ol className="relative mt-14 hidden md:grid md:grid-cols-7">
@@ -931,11 +922,7 @@ function Home() {
                   portal roles only.
                 </p>
               </div>
-              <div className="relative mt-auto flex justify-center pt-8">
-                <span className="grid size-20 place-items-center rounded-full bg-primary-foreground/10 ring-1 ring-primary-foreground/15 transition-transform duration-300 group-hover:scale-105">
-                  <Lock className="size-8 text-secondary" />
-                </span>
-              </div>
+              {/* Icon removed per request */}
             </article>
 
             {/* Audit trails — soft blue */}
