@@ -11,9 +11,7 @@ import {
   Filter,
   Flame,
   Layers,
-  Send,
   ShieldAlert,
-  Sparkles,
   UserCheck,
 } from "lucide-react";
 import { SolicitorStatCard } from "@/components/solicitor/SolicitorStatCard";
@@ -96,21 +94,13 @@ function SolicitorDashboardPage() {
           <span className="text-xs text-muted-foreground">Updated in real-time</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5">
           <SolicitorStatCard
             label="Active Matters"
             value={metrics.activeMatters}
             icon={Layers}
             trend="+3 this week"
             statusColor="blue"
-            onClick={() => navigate({ to: "/solicitor/matters" as any })}
-          />
-          <SolicitorStatCard
-            label="New Matters"
-            value={metrics.newMatters}
-            icon={Sparkles}
-            trend="Needs Triage"
-            statusColor="emerald"
             onClick={() => navigate({ to: "/solicitor/matters" as any })}
           />
           <SolicitorStatCard
@@ -159,14 +149,6 @@ function SolicitorDashboardPage() {
             icon={FileCheck}
             trend="Sign-off Ready"
             statusColor="emerald"
-            onClick={() => navigate({ to: "/solicitor/matters" as any })}
-          />
-          <SolicitorStatCard
-            label="Referrals in Progress"
-            value={metrics.referralsInProgress}
-            icon={Send}
-            trend="IP Partner"
-            statusColor="blue"
             onClick={() => navigate({ to: "/solicitor/matters" as any })}
           />
           <SolicitorStatCard
