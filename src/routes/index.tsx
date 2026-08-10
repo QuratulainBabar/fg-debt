@@ -1133,16 +1133,6 @@ function Home() {
                     Solicitor Portal
                   </Link>
                 </li>
-                <li>
-                  <Link to="/supervisor" className="text-foreground/80 transition-colors hover:text-foreground">
-                    Supervisor Portal
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/admin" className="text-foreground/80 transition-colors hover:text-foreground">
-                    Admin Portal
-                  </Link>
-                </li>
               </ul>
             </div>
 

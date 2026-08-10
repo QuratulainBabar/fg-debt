@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -25,13 +25,38 @@ import { DecisionModal, DecisionType } from "@/components/solicitor/DecisionModa
 import { DocumentPreviewModal } from "@/components/solicitor/DocumentPreviewModal";
 import { toast } from "sonner";
 
-export function MatterReviewPage() {
+const REVIEW_TAB_VALUES = new Set([
+  "overview",
+  "client",
+  "financial",
+  "debts",
+  "assets",
+  "vulnerabilities",
+  "risks",
+  "documents",
+  "ai_rec",
+  "advice",
+  "referrals",
+  "tasks",
+  "notes",
+  "audit",
+]);
+
+export function MatterReviewPage({
+  matterIdOverride,
+  defaultTab = "overview",
+}: {
+  matterIdOverride?: string;
+  defaultTab?: string;
+} = {}) {
   const params = useParams({ strict: false });
-  const matterId = (params as any).matterId || "MAT-2026-4417";
+  const matterId = matterIdOverride || (params as any).matterId || "MAT-2026-4417";
   const navigate = useNavigate();
+  const initialTab = REVIEW_TAB_VALUES.has(defaultTab) ? defaultTab : "overview";
 
   const initialMatter = INITIAL_MATTERS.find((m) => m.id === matterId) || INITIAL_MATTERS[0];
   const [matter, setMatter] = useState<Matter>(initialMatter);
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const [decisionModalOpen, setDecisionModalOpen] = useState(false);
   const [activeDecision, setActiveDecision] = useState<DecisionType>(null);
@@ -43,6 +68,15 @@ export function MatterReviewPage() {
   const [isInternalNote, setIsInternalNote] = useState(true);
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
+
+  useEffect(() => {
+    setActiveTab(REVIEW_TAB_VALUES.has(defaultTab) ? defaultTab : "overview");
+  }, [defaultTab]);
+
+  useEffect(() => {
+    const next = INITIAL_MATTERS.find((m) => m.id === matterId) || INITIAL_MATTERS[0];
+    setMatter(next);
+  }, [matterId]);
 
   const handleDecisionConfirm = (
     action: "approve" | "amend" | "reject" | "override",
@@ -156,49 +190,77 @@ export function MatterReviewPage() {
         <span className="text-xs text-muted-foreground">Assigned Solicitor: <strong>{matter.assignedSolicitor}</strong></span>
       </div>
 
-      <div className="sticky top-16 z-20 rounded-2xl border border-border bg-card/95 p-4 shadow-soft backdrop-blur-xl space-y-3">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-display font-bold text-foreground">{matter.clientName}</h1>
-              <span className="font-mono text-xs text-muted-foreground">{matter.id}</span>
-              <Badge
-                variant={
-                  matter.status === "approved"
-                    ? "default"
-                    : matter.status === "urgent_review"
-                    ? "destructive"
-                    : "secondary"
-                }
-                className="text-xs capitalize"
-              >
-                {matter.status.replace(/_/g, " ")}
-              </Badge>
+      <div className="sticky top-16 z-20 rounded-2xl border border-border bg-card/95 p-5 shadow-soft backdrop-blur-xl space-y-4">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-stretch">
+          {/* Matter summary */}
+          <div className="min-w-0 space-y-4">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <h1 className="text-xl font-display font-bold tracking-tight text-foreground sm:text-2xl">
+                  {matter.clientName}
+                </h1>
+                <Badge
+                  variant={
+                    matter.status === "approved"
+                      ? "default"
+                      : matter.status === "urgent_review"
+                      ? "destructive"
+                      : "secondary"
+                  }
+                  className="text-xs capitalize"
+                >
+                  {matter.status.replace(/_/g, " ")}
+                </Badge>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                <span className="font-mono">{matter.id}</span>
+                <span className="text-border">•</span>
+                <span>
+                  NI: <strong className="text-foreground/80">{matter.niNumber}</strong>
+                </span>
+                <span className="text-border">•</span>
+                <span>Dob: {matter.dob}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                <ShieldCheck className="size-3.5 shrink-0" />
+                Identity Verified
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-              <span>NI: <strong>{matter.niNumber}</strong></span>
-              <span>•</span>
-              <span>Dob: {matter.dob}</span>
-              <span>•</span>
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                <ShieldCheck className="size-3.5" /> Identity Verified
-              </span>
+
+            <div className="flex flex-wrap gap-3">
+              <div className="min-w-[8.5rem] rounded-xl border border-border bg-muted/50 px-4 py-2.5">
+                <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Total Debt
+                </span>
+                <span className="mt-0.5 block text-base font-bold tabular-nums text-foreground">
+                  £{matter.totalDebt.toLocaleString()}
+                </span>
+              </div>
+              <div className="min-w-[8.5rem] rounded-xl border border-border bg-muted/50 px-4 py-2.5">
+                <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Disposable
+                </span>
+                <span
+                  className={`mt-0.5 block text-base font-bold tabular-nums ${
+                    matter.disposableIncome < 0
+                      ? "text-rose-600"
+                      : "text-emerald-600 dark:text-emerald-400"
+                  }`}
+                >
+                  £{matter.disposableIncome}/mo
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <div className="px-3 py-1.5 rounded-xl bg-muted/60 border border-border text-center">
-              <span className="text-[0.65rem] text-muted-foreground block uppercase font-semibold">Total Debt</span>
-              <span className="text-sm font-bold text-foreground">£{matter.totalDebt.toLocaleString()}</span>
-            </div>
-            <div className="px-3 py-1.5 rounded-xl bg-muted/60 border border-border text-center">
-              <span className="text-[0.65rem] text-muted-foreground block uppercase font-semibold">Disposable</span>
-              <span className={`text-sm font-bold ${matter.disposableIncome < 0 ? "text-rose-600" : "text-emerald-600 dark:text-emerald-400"}`}>
-                £{matter.disposableIncome}/mo
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 ml-2 border-l border-border pl-3">
+          {/* Dedicated solicitor actions */}
+          <div className="flex flex-col justify-center rounded-xl border border-border bg-muted/30 p-3.5 sm:min-w-[17.5rem]">
+            <p className="mb-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Solicitor Actions
+            </p>
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs"
@@ -234,7 +296,7 @@ export function MatterReviewPage() {
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-500/10"
+                className="text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 border border-transparent"
                 onClick={() => {
                   setActiveDecision("override");
                   setDecisionModalOpen(true);
@@ -246,15 +308,16 @@ export function MatterReviewPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-950 dark:text-amber-200">
-          <Info className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-2.5 text-xs text-amber-950 dark:text-amber-200">
+          <Info className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <span>
-            <strong>Regulatory Disclaimer:</strong> AI recommendations require solicitor approval before advice is issued to the client.
+            <strong>Regulatory Disclaimer:</strong> AI recommendations require solicitor approval before advice is
+            issued to the client.
           </span>
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="flex w-full overflow-x-auto justify-start h-11 p-1 bg-muted/60 rounded-xl mb-6">
           <TabsTrigger value="overview" className="text-xs font-semibold">Overview</TabsTrigger>
           <TabsTrigger value="client" className="text-xs">Client Info</TabsTrigger>

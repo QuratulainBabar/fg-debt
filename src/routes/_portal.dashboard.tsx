@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Bot,
@@ -7,7 +8,6 @@ import {
   Clock,
   CreditCard,
   FileUp,
-  Gauge,
   MessageSquare,
   PiggyBank,
   Send,
@@ -31,8 +31,13 @@ import {
   totalDebt,
   totalIncome,
 } from "@/lib/mock-data";
+import { isAssessmentComplete } from "@/lib/assessment-progress";
+import { ASSESSMENT_PATH, guardDashboardAccess } from "@/lib/assessment-guard";
 
 export const Route = createFileRoute("/_portal/dashboard")({
+  beforeLoad: () => {
+    guardDashboardAccess();
+  },
   head: () => ({
     meta: [
       { title: "Dashboard — FG Debt Advisor AI" },
@@ -45,7 +50,6 @@ export const Route = createFileRoute("/_portal/dashboard")({
 });
 
 const quickActions = [
-  { to: "/assessment", label: "Continue assessment", icon: Gauge, hint: "Step 14 of 17" },
   { to: "/upload-documents", label: "Upload documents", icon: FileUp, hint: "1 outstanding" },
   { to: "/verification", label: "Identity verification", icon: ShieldCheck, hint: "Verified" },
   { to: "/messages", label: "Message my solicitor", icon: MessageSquare, hint: "1 unread" },
@@ -53,7 +57,6 @@ const quickActions = [
 
 const journey = [
   { label: "Account created", done: true },
-  { label: "Assessment", done: true },
   { label: "Documents", done: true },
   { label: "AI analysis", done: true },
   { label: "Solicitor review", done: false },
@@ -61,26 +64,42 @@ const journey = [
 ];
 
 function Dashboard() {
+  const navigate = useNavigate();
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    if (!isAssessmentComplete()) {
+      navigate({ to: ASSESSMENT_PATH });
+      return;
+    }
+    setAllowed(true);
+  }, [navigate]);
+
+  if (!allowed) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
+        Checking assessment status…
+      </div>
+    );
+  }
+
+  return <DashboardContent />;
+}
+
+function DashboardContent() {
   const activeCases = cases.filter((c) => c.status !== "completed");
   return (
     <>
       <PageHeader
         eyebrow={`Reference ${customer.reference}`}
         title={`Good afternoon, ${customer.firstName}`}
-        description="Your Debt Relief Order assessment is with a solicitor. Here's everything happening on your case right now."
+        description="Your Debt Relief Order case is with a solicitor. Here's everything happening on your case right now."
         actions={
-          <>
-            <Button asChild variant="outline">
-              <Link to="/recommendation">
-                <Sparkles className="size-4" /> View recommendation
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link to="/assessment">
-                Continue assessment <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-          </>
+          <Button asChild variant="outline">
+            <Link to="/recommendation">
+              <Sparkles className="size-4" /> View recommendation
+            </Link>
+          </Button>
         }
       />
 
@@ -103,12 +122,12 @@ function Dashboard() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold">Your progress</h2>
-                <p className="text-sm text-muted-foreground">Stage 4 of 6 · 82% complete</p>
+                <p className="text-sm text-muted-foreground">Stage 3 of 5 · 82% complete</p>
               </div>
               <StatusBadge status="Solicitor review" />
             </div>
             <Progress value={82} className="mt-5 h-2" />
-            <ol className="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            <ol className="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
               {journey.map((s) => (
                 <li key={s.label} className="flex flex-col gap-2">
                   {s.done ? (

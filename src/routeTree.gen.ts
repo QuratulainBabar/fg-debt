@@ -10,57 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as PortalRouteImport } from './routes/_portal'
 import { Route as SolicitorRouteImport } from './routes/_solicitor'
-import { Route as SupervisorRouteImport } from './routes/_supervisor'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PortalAdviceRouteImport } from './routes/_portal.advice'
+import { Route as PortalAffordabilityAssessmentRouteImport } from './routes/_portal.affordability-assessment'
+import { Route as PortalAnswerQuestionsRouteImport } from './routes/_portal.answer-questions'
 import { Route as PortalAssessmentRouteImport } from './routes/_portal.assessment'
 import { Route as PortalAssistantRouteImport } from './routes/_portal.assistant'
 import { Route as PortalCasesRouteImport } from './routes/_portal.cases'
 import { Route as PortalDashboardRouteImport } from './routes/_portal.dashboard'
+import { Route as PortalDebtCreditorInformationRouteImport } from './routes/_portal.debt-creditor-information'
+import { Route as PortalDebtOptionsRouteImport } from './routes/_portal.debt-options'
 import { Route as PortalDebtSummaryRouteImport } from './routes/_portal.debt-summary'
+import { Route as PortalDocumentHelpRouteImport } from './routes/_portal.document-help'
 import { Route as PortalDocumentsRouteImport } from './routes/_portal.documents'
+import { Route as PortalExplainDebtOptionsRouteImport } from './routes/_portal.explain-debt-options'
+import { Route as PortalFinancialInformationRouteImport } from './routes/_portal.financial-information'
 import { Route as PortalFinancialSummaryRouteImport } from './routes/_portal.financial-summary'
 import { Route as PortalMessagesRouteImport } from './routes/_portal.messages'
+import { Route as PortalMissingEvidenceRouteImport } from './routes/_portal.missing-evidence'
 import { Route as PortalProfileRouteImport } from './routes/_portal.profile'
 import { Route as PortalRecommendationRouteImport } from './routes/_portal.recommendation'
 import { Route as PortalReferralsRouteImport } from './routes/_portal.referrals'
+import { Route as PortalRiskAssessmentRouteImport } from './routes/_portal.risk-assessment'
+import { Route as PortalStatusUpdatesRouteImport } from './routes/_portal.status-updates'
 import { Route as PortalUploadDocumentsRouteImport } from './routes/_portal.upload-documents'
 import { Route as PortalVerificationRouteImport } from './routes/_portal.verification'
-import { Route as AdminAdminIndexRouteImport } from './routes/_admin.admin.index'
-import { Route as AdminAdminAuditLogsRouteImport } from './routes/_admin.admin.audit-logs'
-import { Route as AdminAdminDebtSolutionRulesRouteImport } from './routes/_admin.admin.debt-solution-rules'
-import { Route as AdminAdminDocumentTemplatesRouteImport } from './routes/_admin.admin.document-templates'
-import { Route as AdminAdminFinancialRulesRouteImport } from './routes/_admin.admin.financial-rules'
-import { Route as AdminAdminIntegrationsRouteImport } from './routes/_admin.admin.integrations'
-import { Route as AdminAdminLegalRulesRouteImport } from './routes/_admin.admin.legal-rules'
-import { Route as AdminAdminReferralPartnersRouteImport } from './routes/_admin.admin.referral-partners'
-import { Route as AdminAdminReminderSettingsRouteImport } from './routes/_admin.admin.reminder-settings'
-import { Route as AdminAdminReportsRouteImport } from './routes/_admin.admin.reports'
-import { Route as AdminAdminRiskRulesRouteImport } from './routes/_admin.admin.risk-rules'
-import { Route as AdminAdminRolesRouteImport } from './routes/_admin.admin.roles'
-import { Route as AdminAdminSettingsRouteImport } from './routes/_admin.admin.settings'
-import { Route as AdminAdminUsersRouteImport } from './routes/_admin.admin.users'
-import { Route as AdminAdminVulnerabilityRulesRouteImport } from './routes/_admin.admin.vulnerability-rules'
-import { Route as AdminAdminWorkflowBuilderRouteImport } from './routes/_admin.admin.workflow-builder'
+import { Route as PortalVulnerabilityAssessmentRouteImport } from './routes/_portal.vulnerability-assessment'
 import { Route as SolicitorSolicitorIndexRouteImport } from './routes/_solicitor.solicitor.index'
+import { Route as SolicitorSolicitorSplatRouteImport } from './routes/_solicitor.solicitor.$'
 import { Route as SolicitorSolicitorAuditRouteImport } from './routes/_solicitor.solicitor.audit'
 import { Route as SolicitorSolicitorDocumentsRouteImport } from './routes/_solicitor.solicitor.documents'
 import { Route as SolicitorSolicitorNotificationsRouteImport } from './routes/_solicitor.solicitor.notifications'
 import { Route as SolicitorSolicitorTasksRouteImport } from './routes/_solicitor.solicitor.tasks'
-import { Route as SupervisorSupervisorIndexRouteImport } from './routes/_supervisor.supervisor.index'
-import { Route as SupervisorSupervisorAiOverridesRouteImport } from './routes/_supervisor.supervisor.ai-overrides'
-import { Route as SupervisorSupervisorAuditRouteImport } from './routes/_supervisor.supervisor.audit'
-import { Route as SupervisorSupervisorComplianceRouteImport } from './routes/_supervisor.supervisor.compliance'
-import { Route as SupervisorSupervisorHighRiskRouteImport } from './routes/_supervisor.supervisor.high-risk'
-import { Route as SupervisorSupervisorPerformanceRouteImport } from './routes/_supervisor.supervisor.performance'
-import { Route as SupervisorSupervisorQualityReviewsRouteImport } from './routes/_supervisor.supervisor.quality-reviews'
-import { Route as SupervisorSupervisorSensitiveApprovalsRouteImport } from './routes/_supervisor.supervisor.sensitive-approvals'
-import { Route as SupervisorSupervisorSolicitorDecisionsRouteImport } from './routes/_supervisor.supervisor.solicitor-decisions'
 import { Route as SolicitorSolicitorMattersIndexRouteImport } from './routes/_solicitor.solicitor.matters.index'
 import { Route as SolicitorSolicitorMattersMatterIdRouteImport } from './routes/_solicitor.solicitor.matters.$matterId'
 
@@ -69,20 +55,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/_admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PortalRoute = PortalRouteImport.update({
   id: '/_portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SolicitorRoute = SolicitorRouteImport.update({
   id: '/_solicitor',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SupervisorRoute = SupervisorRouteImport.update({
-  id: '/_supervisor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -105,6 +83,22 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalAdviceRoute = PortalAdviceRouteImport.update({
+  id: '/advice',
+  path: '/advice',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalAffordabilityAssessmentRoute =
+  PortalAffordabilityAssessmentRouteImport.update({
+    id: '/affordability-assessment',
+    path: '/affordability-assessment',
+    getParentRoute: () => PortalRoute,
+  } as any)
+const PortalAnswerQuestionsRoute = PortalAnswerQuestionsRouteImport.update({
+  id: '/answer-questions',
+  path: '/answer-questions',
+  getParentRoute: () => PortalRoute,
+} as any)
 const PortalAssessmentRoute = PortalAssessmentRouteImport.update({
   id: '/assessment',
   path: '/assessment',
@@ -125,9 +119,25 @@ const PortalDashboardRoute = PortalDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => PortalRoute,
 } as any)
+const PortalDebtCreditorInformationRoute =
+  PortalDebtCreditorInformationRouteImport.update({
+    id: '/debt-creditor-information',
+    path: '/debt-creditor-information',
+    getParentRoute: () => PortalRoute,
+  } as any)
+const PortalDebtOptionsRoute = PortalDebtOptionsRouteImport.update({
+  id: '/debt-options',
+  path: '/debt-options',
+  getParentRoute: () => PortalRoute,
+} as any)
 const PortalDebtSummaryRoute = PortalDebtSummaryRouteImport.update({
   id: '/debt-summary',
   path: '/debt-summary',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalDocumentHelpRoute = PortalDocumentHelpRouteImport.update({
+  id: '/document-help',
+  path: '/document-help',
   getParentRoute: () => PortalRoute,
 } as any)
 const PortalDocumentsRoute = PortalDocumentsRouteImport.update({
@@ -135,6 +145,18 @@ const PortalDocumentsRoute = PortalDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => PortalRoute,
 } as any)
+const PortalExplainDebtOptionsRoute =
+  PortalExplainDebtOptionsRouteImport.update({
+    id: '/explain-debt-options',
+    path: '/explain-debt-options',
+    getParentRoute: () => PortalRoute,
+  } as any)
+const PortalFinancialInformationRoute =
+  PortalFinancialInformationRouteImport.update({
+    id: '/financial-information',
+    path: '/financial-information',
+    getParentRoute: () => PortalRoute,
+  } as any)
 const PortalFinancialSummaryRoute = PortalFinancialSummaryRouteImport.update({
   id: '/financial-summary',
   path: '/financial-summary',
@@ -143,6 +165,11 @@ const PortalFinancialSummaryRoute = PortalFinancialSummaryRouteImport.update({
 const PortalMessagesRoute = PortalMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalMissingEvidenceRoute = PortalMissingEvidenceRouteImport.update({
+  id: '/missing-evidence',
+  path: '/missing-evidence',
   getParentRoute: () => PortalRoute,
 } as any)
 const PortalProfileRoute = PortalProfileRouteImport.update({
@@ -160,6 +187,16 @@ const PortalReferralsRoute = PortalReferralsRouteImport.update({
   path: '/referrals',
   getParentRoute: () => PortalRoute,
 } as any)
+const PortalRiskAssessmentRoute = PortalRiskAssessmentRouteImport.update({
+  id: '/risk-assessment',
+  path: '/risk-assessment',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalStatusUpdatesRoute = PortalStatusUpdatesRouteImport.update({
+  id: '/status-updates',
+  path: '/status-updates',
+  getParentRoute: () => PortalRoute,
+} as any)
 const PortalUploadDocumentsRoute = PortalUploadDocumentsRouteImport.update({
   id: '/upload-documents',
   path: '/upload-documents',
@@ -170,96 +207,20 @@ const PortalVerificationRoute = PortalVerificationRouteImport.update({
   path: '/verification',
   getParentRoute: () => PortalRoute,
 } as any)
-const AdminAdminIndexRoute = AdminAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdminAuditLogsRoute = AdminAdminAuditLogsRouteImport.update({
-  id: '/admin/audit-logs',
-  path: '/admin/audit-logs',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdminDebtSolutionRulesRoute =
-  AdminAdminDebtSolutionRulesRouteImport.update({
-    id: '/admin/debt-solution-rules',
-    path: '/admin/debt-solution-rules',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminAdminDocumentTemplatesRoute =
-  AdminAdminDocumentTemplatesRouteImport.update({
-    id: '/admin/document-templates',
-    path: '/admin/document-templates',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminAdminFinancialRulesRoute =
-  AdminAdminFinancialRulesRouteImport.update({
-    id: '/admin/financial-rules',
-    path: '/admin/financial-rules',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminAdminIntegrationsRoute = AdminAdminIntegrationsRouteImport.update({
-  id: '/admin/integrations',
-  path: '/admin/integrations',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdminLegalRulesRoute = AdminAdminLegalRulesRouteImport.update({
-  id: '/admin/legal-rules',
-  path: '/admin/legal-rules',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdminReferralPartnersRoute =
-  AdminAdminReferralPartnersRouteImport.update({
-    id: '/admin/referral-partners',
-    path: '/admin/referral-partners',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminAdminReminderSettingsRoute =
-  AdminAdminReminderSettingsRouteImport.update({
-    id: '/admin/reminder-settings',
-    path: '/admin/reminder-settings',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminAdminReportsRoute = AdminAdminReportsRouteImport.update({
-  id: '/admin/reports',
-  path: '/admin/reports',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdminRiskRulesRoute = AdminAdminRiskRulesRouteImport.update({
-  id: '/admin/risk-rules',
-  path: '/admin/risk-rules',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdminRolesRoute = AdminAdminRolesRouteImport.update({
-  id: '/admin/roles',
-  path: '/admin/roles',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdminSettingsRoute = AdminAdminSettingsRouteImport.update({
-  id: '/admin/settings',
-  path: '/admin/settings',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdminUsersRoute = AdminAdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdminVulnerabilityRulesRoute =
-  AdminAdminVulnerabilityRulesRouteImport.update({
-    id: '/admin/vulnerability-rules',
-    path: '/admin/vulnerability-rules',
-    getParentRoute: () => AdminRoute,
-  } as any)
-const AdminAdminWorkflowBuilderRoute =
-  AdminAdminWorkflowBuilderRouteImport.update({
-    id: '/admin/workflow-builder',
-    path: '/admin/workflow-builder',
-    getParentRoute: () => AdminRoute,
+const PortalVulnerabilityAssessmentRoute =
+  PortalVulnerabilityAssessmentRouteImport.update({
+    id: '/vulnerability-assessment',
+    path: '/vulnerability-assessment',
+    getParentRoute: () => PortalRoute,
   } as any)
 const SolicitorSolicitorIndexRoute = SolicitorSolicitorIndexRouteImport.update({
   id: '/solicitor/',
   path: '/solicitor/',
+  getParentRoute: () => SolicitorRoute,
+} as any)
+const SolicitorSolicitorSplatRoute = SolicitorSolicitorSplatRouteImport.update({
+  id: '/solicitor/$',
+  path: '/solicitor/$',
   getParentRoute: () => SolicitorRoute,
 } as any)
 const SolicitorSolicitorAuditRoute = SolicitorSolicitorAuditRouteImport.update({
@@ -284,60 +245,6 @@ const SolicitorSolicitorTasksRoute = SolicitorSolicitorTasksRouteImport.update({
   path: '/solicitor/tasks',
   getParentRoute: () => SolicitorRoute,
 } as any)
-const SupervisorSupervisorIndexRoute =
-  SupervisorSupervisorIndexRouteImport.update({
-    id: '/supervisor/',
-    path: '/supervisor/',
-    getParentRoute: () => SupervisorRoute,
-  } as any)
-const SupervisorSupervisorAiOverridesRoute =
-  SupervisorSupervisorAiOverridesRouteImport.update({
-    id: '/supervisor/ai-overrides',
-    path: '/supervisor/ai-overrides',
-    getParentRoute: () => SupervisorRoute,
-  } as any)
-const SupervisorSupervisorAuditRoute =
-  SupervisorSupervisorAuditRouteImport.update({
-    id: '/supervisor/audit',
-    path: '/supervisor/audit',
-    getParentRoute: () => SupervisorRoute,
-  } as any)
-const SupervisorSupervisorComplianceRoute =
-  SupervisorSupervisorComplianceRouteImport.update({
-    id: '/supervisor/compliance',
-    path: '/supervisor/compliance',
-    getParentRoute: () => SupervisorRoute,
-  } as any)
-const SupervisorSupervisorHighRiskRoute =
-  SupervisorSupervisorHighRiskRouteImport.update({
-    id: '/supervisor/high-risk',
-    path: '/supervisor/high-risk',
-    getParentRoute: () => SupervisorRoute,
-  } as any)
-const SupervisorSupervisorPerformanceRoute =
-  SupervisorSupervisorPerformanceRouteImport.update({
-    id: '/supervisor/performance',
-    path: '/supervisor/performance',
-    getParentRoute: () => SupervisorRoute,
-  } as any)
-const SupervisorSupervisorQualityReviewsRoute =
-  SupervisorSupervisorQualityReviewsRouteImport.update({
-    id: '/supervisor/quality-reviews',
-    path: '/supervisor/quality-reviews',
-    getParentRoute: () => SupervisorRoute,
-  } as any)
-const SupervisorSupervisorSensitiveApprovalsRoute =
-  SupervisorSupervisorSensitiveApprovalsRouteImport.update({
-    id: '/supervisor/sensitive-approvals',
-    path: '/supervisor/sensitive-approvals',
-    getParentRoute: () => SupervisorRoute,
-  } as any)
-const SupervisorSupervisorSolicitorDecisionsRoute =
-  SupervisorSupervisorSolicitorDecisionsRouteImport.update({
-    id: '/supervisor/solicitor-decisions',
-    path: '/supervisor/solicitor-decisions',
-    getParentRoute: () => SupervisorRoute,
-  } as any)
 const SolicitorSolicitorMattersIndexRoute =
   SolicitorSolicitorMattersIndexRouteImport.update({
     id: '/solicitor/matters/',
@@ -357,49 +264,37 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/advice': typeof PortalAdviceRoute
+  '/affordability-assessment': typeof PortalAffordabilityAssessmentRoute
+  '/answer-questions': typeof PortalAnswerQuestionsRoute
   '/assessment': typeof PortalAssessmentRoute
   '/assistant': typeof PortalAssistantRoute
   '/cases': typeof PortalCasesRoute
   '/dashboard': typeof PortalDashboardRoute
+  '/debt-creditor-information': typeof PortalDebtCreditorInformationRoute
+  '/debt-options': typeof PortalDebtOptionsRoute
   '/debt-summary': typeof PortalDebtSummaryRoute
+  '/document-help': typeof PortalDocumentHelpRoute
   '/documents': typeof PortalDocumentsRoute
+  '/explain-debt-options': typeof PortalExplainDebtOptionsRoute
+  '/financial-information': typeof PortalFinancialInformationRoute
   '/financial-summary': typeof PortalFinancialSummaryRoute
   '/messages': typeof PortalMessagesRoute
+  '/missing-evidence': typeof PortalMissingEvidenceRoute
   '/profile': typeof PortalProfileRoute
   '/recommendation': typeof PortalRecommendationRoute
   '/referrals': typeof PortalReferralsRoute
+  '/risk-assessment': typeof PortalRiskAssessmentRoute
+  '/status-updates': typeof PortalStatusUpdatesRoute
   '/upload-documents': typeof PortalUploadDocumentsRoute
   '/verification': typeof PortalVerificationRoute
-  '/admin/audit-logs': typeof AdminAdminAuditLogsRoute
-  '/admin/debt-solution-rules': typeof AdminAdminDebtSolutionRulesRoute
-  '/admin/document-templates': typeof AdminAdminDocumentTemplatesRoute
-  '/admin/financial-rules': typeof AdminAdminFinancialRulesRoute
-  '/admin/integrations': typeof AdminAdminIntegrationsRoute
-  '/admin/legal-rules': typeof AdminAdminLegalRulesRoute
-  '/admin/referral-partners': typeof AdminAdminReferralPartnersRoute
-  '/admin/reminder-settings': typeof AdminAdminReminderSettingsRoute
-  '/admin/reports': typeof AdminAdminReportsRoute
-  '/admin/risk-rules': typeof AdminAdminRiskRulesRoute
-  '/admin/roles': typeof AdminAdminRolesRoute
-  '/admin/settings': typeof AdminAdminSettingsRoute
-  '/admin/users': typeof AdminAdminUsersRoute
-  '/admin/vulnerability-rules': typeof AdminAdminVulnerabilityRulesRoute
-  '/admin/workflow-builder': typeof AdminAdminWorkflowBuilderRoute
+  '/vulnerability-assessment': typeof PortalVulnerabilityAssessmentRoute
+  '/solicitor/$': typeof SolicitorSolicitorSplatRoute
   '/solicitor/audit': typeof SolicitorSolicitorAuditRoute
   '/solicitor/documents': typeof SolicitorSolicitorDocumentsRoute
   '/solicitor/notifications': typeof SolicitorSolicitorNotificationsRoute
   '/solicitor/tasks': typeof SolicitorSolicitorTasksRoute
-  '/supervisor/ai-overrides': typeof SupervisorSupervisorAiOverridesRoute
-  '/supervisor/audit': typeof SupervisorSupervisorAuditRoute
-  '/supervisor/compliance': typeof SupervisorSupervisorComplianceRoute
-  '/supervisor/high-risk': typeof SupervisorSupervisorHighRiskRoute
-  '/supervisor/performance': typeof SupervisorSupervisorPerformanceRoute
-  '/supervisor/quality-reviews': typeof SupervisorSupervisorQualityReviewsRoute
-  '/supervisor/sensitive-approvals': typeof SupervisorSupervisorSensitiveApprovalsRoute
-  '/supervisor/solicitor-decisions': typeof SupervisorSupervisorSolicitorDecisionsRoute
-  '/admin/': typeof AdminAdminIndexRoute
   '/solicitor/': typeof SolicitorSolicitorIndexRoute
-  '/supervisor/': typeof SupervisorSupervisorIndexRoute
   '/solicitor/matters/$matterId': typeof SolicitorSolicitorMattersMatterIdRoute
   '/solicitor/matters/': typeof SolicitorSolicitorMattersIndexRoute
 }
@@ -409,106 +304,80 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/advice': typeof PortalAdviceRoute
+  '/affordability-assessment': typeof PortalAffordabilityAssessmentRoute
+  '/answer-questions': typeof PortalAnswerQuestionsRoute
   '/assessment': typeof PortalAssessmentRoute
   '/assistant': typeof PortalAssistantRoute
   '/cases': typeof PortalCasesRoute
   '/dashboard': typeof PortalDashboardRoute
+  '/debt-creditor-information': typeof PortalDebtCreditorInformationRoute
+  '/debt-options': typeof PortalDebtOptionsRoute
   '/debt-summary': typeof PortalDebtSummaryRoute
+  '/document-help': typeof PortalDocumentHelpRoute
   '/documents': typeof PortalDocumentsRoute
+  '/explain-debt-options': typeof PortalExplainDebtOptionsRoute
+  '/financial-information': typeof PortalFinancialInformationRoute
   '/financial-summary': typeof PortalFinancialSummaryRoute
   '/messages': typeof PortalMessagesRoute
+  '/missing-evidence': typeof PortalMissingEvidenceRoute
   '/profile': typeof PortalProfileRoute
   '/recommendation': typeof PortalRecommendationRoute
   '/referrals': typeof PortalReferralsRoute
+  '/risk-assessment': typeof PortalRiskAssessmentRoute
+  '/status-updates': typeof PortalStatusUpdatesRoute
   '/upload-documents': typeof PortalUploadDocumentsRoute
   '/verification': typeof PortalVerificationRoute
-  '/admin/audit-logs': typeof AdminAdminAuditLogsRoute
-  '/admin/debt-solution-rules': typeof AdminAdminDebtSolutionRulesRoute
-  '/admin/document-templates': typeof AdminAdminDocumentTemplatesRoute
-  '/admin/financial-rules': typeof AdminAdminFinancialRulesRoute
-  '/admin/integrations': typeof AdminAdminIntegrationsRoute
-  '/admin/legal-rules': typeof AdminAdminLegalRulesRoute
-  '/admin/referral-partners': typeof AdminAdminReferralPartnersRoute
-  '/admin/reminder-settings': typeof AdminAdminReminderSettingsRoute
-  '/admin/reports': typeof AdminAdminReportsRoute
-  '/admin/risk-rules': typeof AdminAdminRiskRulesRoute
-  '/admin/roles': typeof AdminAdminRolesRoute
-  '/admin/settings': typeof AdminAdminSettingsRoute
-  '/admin/users': typeof AdminAdminUsersRoute
-  '/admin/vulnerability-rules': typeof AdminAdminVulnerabilityRulesRoute
-  '/admin/workflow-builder': typeof AdminAdminWorkflowBuilderRoute
+  '/vulnerability-assessment': typeof PortalVulnerabilityAssessmentRoute
+  '/solicitor/$': typeof SolicitorSolicitorSplatRoute
   '/solicitor/audit': typeof SolicitorSolicitorAuditRoute
   '/solicitor/documents': typeof SolicitorSolicitorDocumentsRoute
   '/solicitor/notifications': typeof SolicitorSolicitorNotificationsRoute
   '/solicitor/tasks': typeof SolicitorSolicitorTasksRoute
-  '/supervisor/ai-overrides': typeof SupervisorSupervisorAiOverridesRoute
-  '/supervisor/audit': typeof SupervisorSupervisorAuditRoute
-  '/supervisor/compliance': typeof SupervisorSupervisorComplianceRoute
-  '/supervisor/high-risk': typeof SupervisorSupervisorHighRiskRoute
-  '/supervisor/performance': typeof SupervisorSupervisorPerformanceRoute
-  '/supervisor/quality-reviews': typeof SupervisorSupervisorQualityReviewsRoute
-  '/supervisor/sensitive-approvals': typeof SupervisorSupervisorSensitiveApprovalsRoute
-  '/supervisor/solicitor-decisions': typeof SupervisorSupervisorSolicitorDecisionsRoute
-  '/admin': typeof AdminAdminIndexRoute
   '/solicitor': typeof SolicitorSolicitorIndexRoute
-  '/supervisor': typeof SupervisorSupervisorIndexRoute
   '/solicitor/matters/$matterId': typeof SolicitorSolicitorMattersMatterIdRoute
   '/solicitor/matters': typeof SolicitorSolicitorMattersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_admin': typeof AdminRouteWithChildren
   '/_portal': typeof PortalRouteWithChildren
   '/_solicitor': typeof SolicitorRouteWithChildren
-  '/_supervisor': typeof SupervisorRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_portal/advice': typeof PortalAdviceRoute
+  '/_portal/affordability-assessment': typeof PortalAffordabilityAssessmentRoute
+  '/_portal/answer-questions': typeof PortalAnswerQuestionsRoute
   '/_portal/assessment': typeof PortalAssessmentRoute
   '/_portal/assistant': typeof PortalAssistantRoute
   '/_portal/cases': typeof PortalCasesRoute
   '/_portal/dashboard': typeof PortalDashboardRoute
+  '/_portal/debt-creditor-information': typeof PortalDebtCreditorInformationRoute
+  '/_portal/debt-options': typeof PortalDebtOptionsRoute
   '/_portal/debt-summary': typeof PortalDebtSummaryRoute
+  '/_portal/document-help': typeof PortalDocumentHelpRoute
   '/_portal/documents': typeof PortalDocumentsRoute
+  '/_portal/explain-debt-options': typeof PortalExplainDebtOptionsRoute
+  '/_portal/financial-information': typeof PortalFinancialInformationRoute
   '/_portal/financial-summary': typeof PortalFinancialSummaryRoute
   '/_portal/messages': typeof PortalMessagesRoute
+  '/_portal/missing-evidence': typeof PortalMissingEvidenceRoute
   '/_portal/profile': typeof PortalProfileRoute
   '/_portal/recommendation': typeof PortalRecommendationRoute
   '/_portal/referrals': typeof PortalReferralsRoute
+  '/_portal/risk-assessment': typeof PortalRiskAssessmentRoute
+  '/_portal/status-updates': typeof PortalStatusUpdatesRoute
   '/_portal/upload-documents': typeof PortalUploadDocumentsRoute
   '/_portal/verification': typeof PortalVerificationRoute
-  '/_admin/admin/audit-logs': typeof AdminAdminAuditLogsRoute
-  '/_admin/admin/debt-solution-rules': typeof AdminAdminDebtSolutionRulesRoute
-  '/_admin/admin/document-templates': typeof AdminAdminDocumentTemplatesRoute
-  '/_admin/admin/financial-rules': typeof AdminAdminFinancialRulesRoute
-  '/_admin/admin/integrations': typeof AdminAdminIntegrationsRoute
-  '/_admin/admin/legal-rules': typeof AdminAdminLegalRulesRoute
-  '/_admin/admin/referral-partners': typeof AdminAdminReferralPartnersRoute
-  '/_admin/admin/reminder-settings': typeof AdminAdminReminderSettingsRoute
-  '/_admin/admin/reports': typeof AdminAdminReportsRoute
-  '/_admin/admin/risk-rules': typeof AdminAdminRiskRulesRoute
-  '/_admin/admin/roles': typeof AdminAdminRolesRoute
-  '/_admin/admin/settings': typeof AdminAdminSettingsRoute
-  '/_admin/admin/users': typeof AdminAdminUsersRoute
-  '/_admin/admin/vulnerability-rules': typeof AdminAdminVulnerabilityRulesRoute
-  '/_admin/admin/workflow-builder': typeof AdminAdminWorkflowBuilderRoute
+  '/_portal/vulnerability-assessment': typeof PortalVulnerabilityAssessmentRoute
+  '/_solicitor/solicitor/$': typeof SolicitorSolicitorSplatRoute
   '/_solicitor/solicitor/audit': typeof SolicitorSolicitorAuditRoute
   '/_solicitor/solicitor/documents': typeof SolicitorSolicitorDocumentsRoute
   '/_solicitor/solicitor/notifications': typeof SolicitorSolicitorNotificationsRoute
   '/_solicitor/solicitor/tasks': typeof SolicitorSolicitorTasksRoute
-  '/_supervisor/supervisor/ai-overrides': typeof SupervisorSupervisorAiOverridesRoute
-  '/_supervisor/supervisor/audit': typeof SupervisorSupervisorAuditRoute
-  '/_supervisor/supervisor/compliance': typeof SupervisorSupervisorComplianceRoute
-  '/_supervisor/supervisor/high-risk': typeof SupervisorSupervisorHighRiskRoute
-  '/_supervisor/supervisor/performance': typeof SupervisorSupervisorPerformanceRoute
-  '/_supervisor/supervisor/quality-reviews': typeof SupervisorSupervisorQualityReviewsRoute
-  '/_supervisor/supervisor/sensitive-approvals': typeof SupervisorSupervisorSensitiveApprovalsRoute
-  '/_supervisor/supervisor/solicitor-decisions': typeof SupervisorSupervisorSolicitorDecisionsRoute
-  '/_admin/admin/': typeof AdminAdminIndexRoute
   '/_solicitor/solicitor/': typeof SolicitorSolicitorIndexRoute
-  '/_supervisor/supervisor/': typeof SupervisorSupervisorIndexRoute
   '/_solicitor/solicitor/matters/$matterId': typeof SolicitorSolicitorMattersMatterIdRoute
   '/_solicitor/solicitor/matters/': typeof SolicitorSolicitorMattersIndexRoute
 }
@@ -520,49 +389,37 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/advice'
+    | '/affordability-assessment'
+    | '/answer-questions'
     | '/assessment'
     | '/assistant'
     | '/cases'
     | '/dashboard'
+    | '/debt-creditor-information'
+    | '/debt-options'
     | '/debt-summary'
+    | '/document-help'
     | '/documents'
+    | '/explain-debt-options'
+    | '/financial-information'
     | '/financial-summary'
     | '/messages'
+    | '/missing-evidence'
     | '/profile'
     | '/recommendation'
     | '/referrals'
+    | '/risk-assessment'
+    | '/status-updates'
     | '/upload-documents'
     | '/verification'
-    | '/admin/audit-logs'
-    | '/admin/debt-solution-rules'
-    | '/admin/document-templates'
-    | '/admin/financial-rules'
-    | '/admin/integrations'
-    | '/admin/legal-rules'
-    | '/admin/referral-partners'
-    | '/admin/reminder-settings'
-    | '/admin/reports'
-    | '/admin/risk-rules'
-    | '/admin/roles'
-    | '/admin/settings'
-    | '/admin/users'
-    | '/admin/vulnerability-rules'
-    | '/admin/workflow-builder'
+    | '/vulnerability-assessment'
+    | '/solicitor/$'
     | '/solicitor/audit'
     | '/solicitor/documents'
     | '/solicitor/notifications'
     | '/solicitor/tasks'
-    | '/supervisor/ai-overrides'
-    | '/supervisor/audit'
-    | '/supervisor/compliance'
-    | '/supervisor/high-risk'
-    | '/supervisor/performance'
-    | '/supervisor/quality-reviews'
-    | '/supervisor/sensitive-approvals'
-    | '/supervisor/solicitor-decisions'
-    | '/admin/'
     | '/solicitor/'
-    | '/supervisor/'
     | '/solicitor/matters/$matterId'
     | '/solicitor/matters/'
   fileRoutesByTo: FileRoutesByTo
@@ -572,115 +429,87 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/advice'
+    | '/affordability-assessment'
+    | '/answer-questions'
     | '/assessment'
     | '/assistant'
     | '/cases'
     | '/dashboard'
+    | '/debt-creditor-information'
+    | '/debt-options'
     | '/debt-summary'
+    | '/document-help'
     | '/documents'
+    | '/explain-debt-options'
+    | '/financial-information'
     | '/financial-summary'
     | '/messages'
+    | '/missing-evidence'
     | '/profile'
     | '/recommendation'
     | '/referrals'
+    | '/risk-assessment'
+    | '/status-updates'
     | '/upload-documents'
     | '/verification'
-    | '/admin/audit-logs'
-    | '/admin/debt-solution-rules'
-    | '/admin/document-templates'
-    | '/admin/financial-rules'
-    | '/admin/integrations'
-    | '/admin/legal-rules'
-    | '/admin/referral-partners'
-    | '/admin/reminder-settings'
-    | '/admin/reports'
-    | '/admin/risk-rules'
-    | '/admin/roles'
-    | '/admin/settings'
-    | '/admin/users'
-    | '/admin/vulnerability-rules'
-    | '/admin/workflow-builder'
+    | '/vulnerability-assessment'
+    | '/solicitor/$'
     | '/solicitor/audit'
     | '/solicitor/documents'
     | '/solicitor/notifications'
     | '/solicitor/tasks'
-    | '/supervisor/ai-overrides'
-    | '/supervisor/audit'
-    | '/supervisor/compliance'
-    | '/supervisor/high-risk'
-    | '/supervisor/performance'
-    | '/supervisor/quality-reviews'
-    | '/supervisor/sensitive-approvals'
-    | '/supervisor/solicitor-decisions'
-    | '/admin'
     | '/solicitor'
-    | '/supervisor'
     | '/solicitor/matters/$matterId'
     | '/solicitor/matters'
   id:
     | '__root__'
     | '/'
-    | '/_admin'
     | '/_portal'
     | '/_solicitor'
-    | '/_supervisor'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/_portal/advice'
+    | '/_portal/affordability-assessment'
+    | '/_portal/answer-questions'
     | '/_portal/assessment'
     | '/_portal/assistant'
     | '/_portal/cases'
     | '/_portal/dashboard'
+    | '/_portal/debt-creditor-information'
+    | '/_portal/debt-options'
     | '/_portal/debt-summary'
+    | '/_portal/document-help'
     | '/_portal/documents'
+    | '/_portal/explain-debt-options'
+    | '/_portal/financial-information'
     | '/_portal/financial-summary'
     | '/_portal/messages'
+    | '/_portal/missing-evidence'
     | '/_portal/profile'
     | '/_portal/recommendation'
     | '/_portal/referrals'
+    | '/_portal/risk-assessment'
+    | '/_portal/status-updates'
     | '/_portal/upload-documents'
     | '/_portal/verification'
-    | '/_admin/admin/audit-logs'
-    | '/_admin/admin/debt-solution-rules'
-    | '/_admin/admin/document-templates'
-    | '/_admin/admin/financial-rules'
-    | '/_admin/admin/integrations'
-    | '/_admin/admin/legal-rules'
-    | '/_admin/admin/referral-partners'
-    | '/_admin/admin/reminder-settings'
-    | '/_admin/admin/reports'
-    | '/_admin/admin/risk-rules'
-    | '/_admin/admin/roles'
-    | '/_admin/admin/settings'
-    | '/_admin/admin/users'
-    | '/_admin/admin/vulnerability-rules'
-    | '/_admin/admin/workflow-builder'
+    | '/_portal/vulnerability-assessment'
+    | '/_solicitor/solicitor/$'
     | '/_solicitor/solicitor/audit'
     | '/_solicitor/solicitor/documents'
     | '/_solicitor/solicitor/notifications'
     | '/_solicitor/solicitor/tasks'
-    | '/_supervisor/supervisor/ai-overrides'
-    | '/_supervisor/supervisor/audit'
-    | '/_supervisor/supervisor/compliance'
-    | '/_supervisor/supervisor/high-risk'
-    | '/_supervisor/supervisor/performance'
-    | '/_supervisor/supervisor/quality-reviews'
-    | '/_supervisor/supervisor/sensitive-approvals'
-    | '/_supervisor/supervisor/solicitor-decisions'
-    | '/_admin/admin/'
     | '/_solicitor/solicitor/'
-    | '/_supervisor/supervisor/'
     | '/_solicitor/solicitor/matters/$matterId'
     | '/_solicitor/solicitor/matters/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRouteWithChildren
   PortalRoute: typeof PortalRouteWithChildren
   SolicitorRoute: typeof SolicitorRouteWithChildren
-  SupervisorRoute: typeof SupervisorRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
@@ -696,13 +525,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_admin': {
-      id: '/_admin'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_portal': {
       id: '/_portal'
       path: ''
@@ -715,13 +537,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof SolicitorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_supervisor': {
-      id: '/_supervisor'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof SupervisorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -752,6 +567,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_portal/advice': {
+      id: '/_portal/advice'
+      path: '/advice'
+      fullPath: '/advice'
+      preLoaderRoute: typeof PortalAdviceRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/affordability-assessment': {
+      id: '/_portal/affordability-assessment'
+      path: '/affordability-assessment'
+      fullPath: '/affordability-assessment'
+      preLoaderRoute: typeof PortalAffordabilityAssessmentRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/answer-questions': {
+      id: '/_portal/answer-questions'
+      path: '/answer-questions'
+      fullPath: '/answer-questions'
+      preLoaderRoute: typeof PortalAnswerQuestionsRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/_portal/assessment': {
       id: '/_portal/assessment'
       path: '/assessment'
@@ -780,6 +616,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalDashboardRouteImport
       parentRoute: typeof PortalRoute
     }
+    '/_portal/debt-creditor-information': {
+      id: '/_portal/debt-creditor-information'
+      path: '/debt-creditor-information'
+      fullPath: '/debt-creditor-information'
+      preLoaderRoute: typeof PortalDebtCreditorInformationRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/debt-options': {
+      id: '/_portal/debt-options'
+      path: '/debt-options'
+      fullPath: '/debt-options'
+      preLoaderRoute: typeof PortalDebtOptionsRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/_portal/debt-summary': {
       id: '/_portal/debt-summary'
       path: '/debt-summary'
@@ -787,11 +637,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalDebtSummaryRouteImport
       parentRoute: typeof PortalRoute
     }
+    '/_portal/document-help': {
+      id: '/_portal/document-help'
+      path: '/document-help'
+      fullPath: '/document-help'
+      preLoaderRoute: typeof PortalDocumentHelpRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/_portal/documents': {
       id: '/_portal/documents'
       path: '/documents'
       fullPath: '/documents'
       preLoaderRoute: typeof PortalDocumentsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/explain-debt-options': {
+      id: '/_portal/explain-debt-options'
+      path: '/explain-debt-options'
+      fullPath: '/explain-debt-options'
+      preLoaderRoute: typeof PortalExplainDebtOptionsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/financial-information': {
+      id: '/_portal/financial-information'
+      path: '/financial-information'
+      fullPath: '/financial-information'
+      preLoaderRoute: typeof PortalFinancialInformationRouteImport
       parentRoute: typeof PortalRoute
     }
     '/_portal/financial-summary': {
@@ -806,6 +677,13 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/messages'
       preLoaderRoute: typeof PortalMessagesRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/missing-evidence': {
+      id: '/_portal/missing-evidence'
+      path: '/missing-evidence'
+      fullPath: '/missing-evidence'
+      preLoaderRoute: typeof PortalMissingEvidenceRouteImport
       parentRoute: typeof PortalRoute
     }
     '/_portal/profile': {
@@ -829,6 +707,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalReferralsRouteImport
       parentRoute: typeof PortalRoute
     }
+    '/_portal/risk-assessment': {
+      id: '/_portal/risk-assessment'
+      path: '/risk-assessment'
+      fullPath: '/risk-assessment'
+      preLoaderRoute: typeof PortalRiskAssessmentRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/status-updates': {
+      id: '/_portal/status-updates'
+      path: '/status-updates'
+      fullPath: '/status-updates'
+      preLoaderRoute: typeof PortalStatusUpdatesRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/_portal/upload-documents': {
       id: '/_portal/upload-documents'
       path: '/upload-documents'
@@ -843,123 +735,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalVerificationRouteImport
       parentRoute: typeof PortalRoute
     }
-    '/_admin/admin/': {
-      id: '/_admin/admin/'
-      path: '/admin'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminAdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/audit-logs': {
-      id: '/_admin/admin/audit-logs'
-      path: '/admin/audit-logs'
-      fullPath: '/admin/audit-logs'
-      preLoaderRoute: typeof AdminAdminAuditLogsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/debt-solution-rules': {
-      id: '/_admin/admin/debt-solution-rules'
-      path: '/admin/debt-solution-rules'
-      fullPath: '/admin/debt-solution-rules'
-      preLoaderRoute: typeof AdminAdminDebtSolutionRulesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/document-templates': {
-      id: '/_admin/admin/document-templates'
-      path: '/admin/document-templates'
-      fullPath: '/admin/document-templates'
-      preLoaderRoute: typeof AdminAdminDocumentTemplatesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/financial-rules': {
-      id: '/_admin/admin/financial-rules'
-      path: '/admin/financial-rules'
-      fullPath: '/admin/financial-rules'
-      preLoaderRoute: typeof AdminAdminFinancialRulesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/integrations': {
-      id: '/_admin/admin/integrations'
-      path: '/admin/integrations'
-      fullPath: '/admin/integrations'
-      preLoaderRoute: typeof AdminAdminIntegrationsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/legal-rules': {
-      id: '/_admin/admin/legal-rules'
-      path: '/admin/legal-rules'
-      fullPath: '/admin/legal-rules'
-      preLoaderRoute: typeof AdminAdminLegalRulesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/referral-partners': {
-      id: '/_admin/admin/referral-partners'
-      path: '/admin/referral-partners'
-      fullPath: '/admin/referral-partners'
-      preLoaderRoute: typeof AdminAdminReferralPartnersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/reminder-settings': {
-      id: '/_admin/admin/reminder-settings'
-      path: '/admin/reminder-settings'
-      fullPath: '/admin/reminder-settings'
-      preLoaderRoute: typeof AdminAdminReminderSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/reports': {
-      id: '/_admin/admin/reports'
-      path: '/admin/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminAdminReportsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/risk-rules': {
-      id: '/_admin/admin/risk-rules'
-      path: '/admin/risk-rules'
-      fullPath: '/admin/risk-rules'
-      preLoaderRoute: typeof AdminAdminRiskRulesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/roles': {
-      id: '/_admin/admin/roles'
-      path: '/admin/roles'
-      fullPath: '/admin/roles'
-      preLoaderRoute: typeof AdminAdminRolesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/settings': {
-      id: '/_admin/admin/settings'
-      path: '/admin/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AdminAdminSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/users': {
-      id: '/_admin/admin/users'
-      path: '/admin/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminAdminUsersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/vulnerability-rules': {
-      id: '/_admin/admin/vulnerability-rules'
-      path: '/admin/vulnerability-rules'
-      fullPath: '/admin/vulnerability-rules'
-      preLoaderRoute: typeof AdminAdminVulnerabilityRulesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/admin/workflow-builder': {
-      id: '/_admin/admin/workflow-builder'
-      path: '/admin/workflow-builder'
-      fullPath: '/admin/workflow-builder'
-      preLoaderRoute: typeof AdminAdminWorkflowBuilderRouteImport
-      parentRoute: typeof AdminRoute
+    '/_portal/vulnerability-assessment': {
+      id: '/_portal/vulnerability-assessment'
+      path: '/vulnerability-assessment'
+      fullPath: '/vulnerability-assessment'
+      preLoaderRoute: typeof PortalVulnerabilityAssessmentRouteImport
+      parentRoute: typeof PortalRoute
     }
     '/_solicitor/solicitor/': {
       id: '/_solicitor/solicitor/'
       path: '/solicitor'
       fullPath: '/solicitor/'
       preLoaderRoute: typeof SolicitorSolicitorIndexRouteImport
+      parentRoute: typeof SolicitorRoute
+    }
+    '/_solicitor/solicitor/$': {
+      id: '/_solicitor/solicitor/$'
+      path: '/solicitor/$'
+      fullPath: '/solicitor/$'
+      preLoaderRoute: typeof SolicitorSolicitorSplatRouteImport
       parentRoute: typeof SolicitorRoute
     }
     '/_solicitor/solicitor/audit': {
@@ -990,69 +784,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SolicitorSolicitorTasksRouteImport
       parentRoute: typeof SolicitorRoute
     }
-    '/_supervisor/supervisor/': {
-      id: '/_supervisor/supervisor/'
-      path: '/supervisor'
-      fullPath: '/supervisor/'
-      preLoaderRoute: typeof SupervisorSupervisorIndexRouteImport
-      parentRoute: typeof SupervisorRoute
-    }
-    '/_supervisor/supervisor/ai-overrides': {
-      id: '/_supervisor/supervisor/ai-overrides'
-      path: '/supervisor/ai-overrides'
-      fullPath: '/supervisor/ai-overrides'
-      preLoaderRoute: typeof SupervisorSupervisorAiOverridesRouteImport
-      parentRoute: typeof SupervisorRoute
-    }
-    '/_supervisor/supervisor/audit': {
-      id: '/_supervisor/supervisor/audit'
-      path: '/supervisor/audit'
-      fullPath: '/supervisor/audit'
-      preLoaderRoute: typeof SupervisorSupervisorAuditRouteImport
-      parentRoute: typeof SupervisorRoute
-    }
-    '/_supervisor/supervisor/compliance': {
-      id: '/_supervisor/supervisor/compliance'
-      path: '/supervisor/compliance'
-      fullPath: '/supervisor/compliance'
-      preLoaderRoute: typeof SupervisorSupervisorComplianceRouteImport
-      parentRoute: typeof SupervisorRoute
-    }
-    '/_supervisor/supervisor/high-risk': {
-      id: '/_supervisor/supervisor/high-risk'
-      path: '/supervisor/high-risk'
-      fullPath: '/supervisor/high-risk'
-      preLoaderRoute: typeof SupervisorSupervisorHighRiskRouteImport
-      parentRoute: typeof SupervisorRoute
-    }
-    '/_supervisor/supervisor/performance': {
-      id: '/_supervisor/supervisor/performance'
-      path: '/supervisor/performance'
-      fullPath: '/supervisor/performance'
-      preLoaderRoute: typeof SupervisorSupervisorPerformanceRouteImport
-      parentRoute: typeof SupervisorRoute
-    }
-    '/_supervisor/supervisor/quality-reviews': {
-      id: '/_supervisor/supervisor/quality-reviews'
-      path: '/supervisor/quality-reviews'
-      fullPath: '/supervisor/quality-reviews'
-      preLoaderRoute: typeof SupervisorSupervisorQualityReviewsRouteImport
-      parentRoute: typeof SupervisorRoute
-    }
-    '/_supervisor/supervisor/sensitive-approvals': {
-      id: '/_supervisor/supervisor/sensitive-approvals'
-      path: '/supervisor/sensitive-approvals'
-      fullPath: '/supervisor/sensitive-approvals'
-      preLoaderRoute: typeof SupervisorSupervisorSensitiveApprovalsRouteImport
-      parentRoute: typeof SupervisorRoute
-    }
-    '/_supervisor/supervisor/solicitor-decisions': {
-      id: '/_supervisor/supervisor/solicitor-decisions'
-      path: '/supervisor/solicitor-decisions'
-      fullPath: '/supervisor/solicitor-decisions'
-      preLoaderRoute: typeof SupervisorSupervisorSolicitorDecisionsRouteImport
-      parentRoute: typeof SupervisorRoute
-    }
     '/_solicitor/solicitor/matters/': {
       id: '/_solicitor/solicitor/matters/'
       path: '/solicitor/matters'
@@ -1070,82 +801,67 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminRouteChildren {
-  AdminAdminAuditLogsRoute: typeof AdminAdminAuditLogsRoute
-  AdminAdminDebtSolutionRulesRoute: typeof AdminAdminDebtSolutionRulesRoute
-  AdminAdminDocumentTemplatesRoute: typeof AdminAdminDocumentTemplatesRoute
-  AdminAdminFinancialRulesRoute: typeof AdminAdminFinancialRulesRoute
-  AdminAdminIntegrationsRoute: typeof AdminAdminIntegrationsRoute
-  AdminAdminLegalRulesRoute: typeof AdminAdminLegalRulesRoute
-  AdminAdminReferralPartnersRoute: typeof AdminAdminReferralPartnersRoute
-  AdminAdminReminderSettingsRoute: typeof AdminAdminReminderSettingsRoute
-  AdminAdminReportsRoute: typeof AdminAdminReportsRoute
-  AdminAdminRiskRulesRoute: typeof AdminAdminRiskRulesRoute
-  AdminAdminRolesRoute: typeof AdminAdminRolesRoute
-  AdminAdminSettingsRoute: typeof AdminAdminSettingsRoute
-  AdminAdminUsersRoute: typeof AdminAdminUsersRoute
-  AdminAdminVulnerabilityRulesRoute: typeof AdminAdminVulnerabilityRulesRoute
-  AdminAdminWorkflowBuilderRoute: typeof AdminAdminWorkflowBuilderRoute
-  AdminAdminIndexRoute: typeof AdminAdminIndexRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminAdminAuditLogsRoute: AdminAdminAuditLogsRoute,
-  AdminAdminDebtSolutionRulesRoute: AdminAdminDebtSolutionRulesRoute,
-  AdminAdminDocumentTemplatesRoute: AdminAdminDocumentTemplatesRoute,
-  AdminAdminFinancialRulesRoute: AdminAdminFinancialRulesRoute,
-  AdminAdminIntegrationsRoute: AdminAdminIntegrationsRoute,
-  AdminAdminLegalRulesRoute: AdminAdminLegalRulesRoute,
-  AdminAdminReferralPartnersRoute: AdminAdminReferralPartnersRoute,
-  AdminAdminReminderSettingsRoute: AdminAdminReminderSettingsRoute,
-  AdminAdminReportsRoute: AdminAdminReportsRoute,
-  AdminAdminRiskRulesRoute: AdminAdminRiskRulesRoute,
-  AdminAdminRolesRoute: AdminAdminRolesRoute,
-  AdminAdminSettingsRoute: AdminAdminSettingsRoute,
-  AdminAdminUsersRoute: AdminAdminUsersRoute,
-  AdminAdminVulnerabilityRulesRoute: AdminAdminVulnerabilityRulesRoute,
-  AdminAdminWorkflowBuilderRoute: AdminAdminWorkflowBuilderRoute,
-  AdminAdminIndexRoute: AdminAdminIndexRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 interface PortalRouteChildren {
+  PortalAdviceRoute: typeof PortalAdviceRoute
+  PortalAffordabilityAssessmentRoute: typeof PortalAffordabilityAssessmentRoute
+  PortalAnswerQuestionsRoute: typeof PortalAnswerQuestionsRoute
   PortalAssessmentRoute: typeof PortalAssessmentRoute
   PortalAssistantRoute: typeof PortalAssistantRoute
   PortalCasesRoute: typeof PortalCasesRoute
   PortalDashboardRoute: typeof PortalDashboardRoute
+  PortalDebtCreditorInformationRoute: typeof PortalDebtCreditorInformationRoute
+  PortalDebtOptionsRoute: typeof PortalDebtOptionsRoute
   PortalDebtSummaryRoute: typeof PortalDebtSummaryRoute
+  PortalDocumentHelpRoute: typeof PortalDocumentHelpRoute
   PortalDocumentsRoute: typeof PortalDocumentsRoute
+  PortalExplainDebtOptionsRoute: typeof PortalExplainDebtOptionsRoute
+  PortalFinancialInformationRoute: typeof PortalFinancialInformationRoute
   PortalFinancialSummaryRoute: typeof PortalFinancialSummaryRoute
   PortalMessagesRoute: typeof PortalMessagesRoute
+  PortalMissingEvidenceRoute: typeof PortalMissingEvidenceRoute
   PortalProfileRoute: typeof PortalProfileRoute
   PortalRecommendationRoute: typeof PortalRecommendationRoute
   PortalReferralsRoute: typeof PortalReferralsRoute
+  PortalRiskAssessmentRoute: typeof PortalRiskAssessmentRoute
+  PortalStatusUpdatesRoute: typeof PortalStatusUpdatesRoute
   PortalUploadDocumentsRoute: typeof PortalUploadDocumentsRoute
   PortalVerificationRoute: typeof PortalVerificationRoute
+  PortalVulnerabilityAssessmentRoute: typeof PortalVulnerabilityAssessmentRoute
 }
 
 const PortalRouteChildren: PortalRouteChildren = {
+  PortalAdviceRoute: PortalAdviceRoute,
+  PortalAffordabilityAssessmentRoute: PortalAffordabilityAssessmentRoute,
+  PortalAnswerQuestionsRoute: PortalAnswerQuestionsRoute,
   PortalAssessmentRoute: PortalAssessmentRoute,
   PortalAssistantRoute: PortalAssistantRoute,
   PortalCasesRoute: PortalCasesRoute,
   PortalDashboardRoute: PortalDashboardRoute,
+  PortalDebtCreditorInformationRoute: PortalDebtCreditorInformationRoute,
+  PortalDebtOptionsRoute: PortalDebtOptionsRoute,
   PortalDebtSummaryRoute: PortalDebtSummaryRoute,
+  PortalDocumentHelpRoute: PortalDocumentHelpRoute,
   PortalDocumentsRoute: PortalDocumentsRoute,
+  PortalExplainDebtOptionsRoute: PortalExplainDebtOptionsRoute,
+  PortalFinancialInformationRoute: PortalFinancialInformationRoute,
   PortalFinancialSummaryRoute: PortalFinancialSummaryRoute,
   PortalMessagesRoute: PortalMessagesRoute,
+  PortalMissingEvidenceRoute: PortalMissingEvidenceRoute,
   PortalProfileRoute: PortalProfileRoute,
   PortalRecommendationRoute: PortalRecommendationRoute,
   PortalReferralsRoute: PortalReferralsRoute,
+  PortalRiskAssessmentRoute: PortalRiskAssessmentRoute,
+  PortalStatusUpdatesRoute: PortalStatusUpdatesRoute,
   PortalUploadDocumentsRoute: PortalUploadDocumentsRoute,
   PortalVerificationRoute: PortalVerificationRoute,
+  PortalVulnerabilityAssessmentRoute: PortalVulnerabilityAssessmentRoute,
 }
 
 const PortalRouteWithChildren =
   PortalRoute._addFileChildren(PortalRouteChildren)
 
 interface SolicitorRouteChildren {
+  SolicitorSolicitorSplatRoute: typeof SolicitorSolicitorSplatRoute
   SolicitorSolicitorAuditRoute: typeof SolicitorSolicitorAuditRoute
   SolicitorSolicitorDocumentsRoute: typeof SolicitorSolicitorDocumentsRoute
   SolicitorSolicitorNotificationsRoute: typeof SolicitorSolicitorNotificationsRoute
@@ -1156,6 +872,7 @@ interface SolicitorRouteChildren {
 }
 
 const SolicitorRouteChildren: SolicitorRouteChildren = {
+  SolicitorSolicitorSplatRoute: SolicitorSolicitorSplatRoute,
   SolicitorSolicitorAuditRoute: SolicitorSolicitorAuditRoute,
   SolicitorSolicitorDocumentsRoute: SolicitorSolicitorDocumentsRoute,
   SolicitorSolicitorNotificationsRoute: SolicitorSolicitorNotificationsRoute,
@@ -1170,43 +887,10 @@ const SolicitorRouteWithChildren = SolicitorRoute._addFileChildren(
   SolicitorRouteChildren,
 )
 
-interface SupervisorRouteChildren {
-  SupervisorSupervisorAiOverridesRoute: typeof SupervisorSupervisorAiOverridesRoute
-  SupervisorSupervisorAuditRoute: typeof SupervisorSupervisorAuditRoute
-  SupervisorSupervisorComplianceRoute: typeof SupervisorSupervisorComplianceRoute
-  SupervisorSupervisorHighRiskRoute: typeof SupervisorSupervisorHighRiskRoute
-  SupervisorSupervisorPerformanceRoute: typeof SupervisorSupervisorPerformanceRoute
-  SupervisorSupervisorQualityReviewsRoute: typeof SupervisorSupervisorQualityReviewsRoute
-  SupervisorSupervisorSensitiveApprovalsRoute: typeof SupervisorSupervisorSensitiveApprovalsRoute
-  SupervisorSupervisorSolicitorDecisionsRoute: typeof SupervisorSupervisorSolicitorDecisionsRoute
-  SupervisorSupervisorIndexRoute: typeof SupervisorSupervisorIndexRoute
-}
-
-const SupervisorRouteChildren: SupervisorRouteChildren = {
-  SupervisorSupervisorAiOverridesRoute: SupervisorSupervisorAiOverridesRoute,
-  SupervisorSupervisorAuditRoute: SupervisorSupervisorAuditRoute,
-  SupervisorSupervisorComplianceRoute: SupervisorSupervisorComplianceRoute,
-  SupervisorSupervisorHighRiskRoute: SupervisorSupervisorHighRiskRoute,
-  SupervisorSupervisorPerformanceRoute: SupervisorSupervisorPerformanceRoute,
-  SupervisorSupervisorQualityReviewsRoute:
-    SupervisorSupervisorQualityReviewsRoute,
-  SupervisorSupervisorSensitiveApprovalsRoute:
-    SupervisorSupervisorSensitiveApprovalsRoute,
-  SupervisorSupervisorSolicitorDecisionsRoute:
-    SupervisorSupervisorSolicitorDecisionsRoute,
-  SupervisorSupervisorIndexRoute: SupervisorSupervisorIndexRoute,
-}
-
-const SupervisorRouteWithChildren = SupervisorRoute._addFileChildren(
-  SupervisorRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRouteWithChildren,
   PortalRoute: PortalRouteWithChildren,
   SolicitorRoute: SolicitorRouteWithChildren,
-  SupervisorRoute: SupervisorRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,

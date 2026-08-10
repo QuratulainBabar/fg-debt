@@ -1,16 +1,20 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
-  CheckCircle2,
   Loader2,
   Save,
   Send,
-  Sparkles,
 } from "lucide-react";
 import { steps, type Field } from "@/lib/assessment-steps";
+import {
+  getAssessmentProgress,
+  markAssessmentSubmitted,
+  saveAssessmentProgress,
+} from "@/lib/assessment-progress";
+import { DASHBOARD_PATH, getResumeStepIndex } from "@/lib/assessment-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,16 +45,44 @@ export const Route = createFileRoute("/_portal/assessment")({
 type Values = Record<string, string>;
 
 function AssessmentPage() {
-  const [index, setIndex] = useState(0);
-  const [values, setValues] = useState<Values>({});
+  const navigate = useNavigate();
+  const saved = useMemo(() => getAssessmentProgress(), []);
+  const [index, setIndex] = useState(() => getResumeStepIndex());
+  const [highestUnlocked, setHighestUnlocked] = useState(() =>
+    saved.submitted ? steps.length - 1 : Math.min(saved.highestUnlockedIndex, steps.length - 1),
+  );
+  const [values, setValues] = useState<Values>(() => ({ ...saved.values }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const step = steps[index]!;
   const progress = Math.round(((index + 1) / steps.length) * 100);
 
+  // If already submitted, send them to the dashboard.
+  useEffect(() => {
+    if (saved.submitted) {
+      navigate({ to: DASHBOARD_PATH });
+    }
+  }, [navigate, saved.submitted]);
+
+  const persist = (next: {
+    values?: Values;
+    stepIndex?: number;
+    highestUnlockedIndex?: number;
+    submitted?: boolean;
+  }) => {
+    const current = getAssessmentProgress();
+    saveAssessmentProgress({
+      values: next.values ?? values,
+      stepIndex: next.stepIndex ?? index,
+      highestUnlockedIndex: next.highestUnlockedIndex ?? highestUnlocked,
+      submitted: next.submitted ?? current.submitted,
+    });
+  };
+
   const set = (name: string, value: string) => {
-    setValues((v) => ({ ...v, [name]: value }));
+    const updated = { ...values, [name]: value };
+    setValues(updated);
+    persist({ values: updated });
     setErrors((e) => {
       if (!e[name]) return e;
       const next = { ...e };
@@ -73,17 +105,40 @@ function AssessmentPage() {
       toast.error("Some answers are missing", { description: "Please complete the highlighted fields." });
       return;
     }
-    setIndex((i) => Math.min(i + 1, steps.length - 1));
+    const nextIndex = Math.min(index + 1, steps.length - 1);
+    const nextUnlocked = Math.max(highestUnlocked, nextIndex);
+    setHighestUnlocked(nextUnlocked);
+    setIndex(nextIndex);
+    persist({
+      stepIndex: nextIndex,
+      highestUnlockedIndex: nextUnlocked,
+      values,
+    });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goBack = () => {
-    setIndex((i) => Math.max(i - 1, 0));
+    const prev = Math.max(index - 1, 0);
+    setIndex(prev);
+    persist({ stepIndex: prev });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const goToStep = (i: number) => {
+    if (i > highestUnlocked) {
+      toast.error("Complete earlier steps first", {
+        description: "Finish each step in order before moving ahead.",
+      });
+      return;
+    }
+    setIndex(i);
+    persist({ stepIndex: i });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const saveDraft = () => {
     setSaving(true);
+    persist({ values, stepIndex: index, highestUnlockedIndex: highestUnlocked });
     setTimeout(() => {
       setSaving(false);
       toast.success("Draft saved", { description: `Progress saved at step ${step.id} of ${steps.length}.` });
@@ -93,9 +148,12 @@ function AssessmentPage() {
   const submit = () => {
     setSaving(true);
     setTimeout(() => {
+      markAssessmentSubmitted();
       setSaving(false);
-      setSubmitted(true);
-      toast.success("Assessment submitted", { description: "Your case is now queued for AI analysis." });
+      toast.success("Assessment submitted", {
+        description: "Your case is now queued for AI analysis. Taking you to your dashboard.",
+      });
+      navigate({ to: DASHBOARD_PATH });
     }, 1100);
   };
 
@@ -119,14 +177,19 @@ function AssessmentPage() {
             {steps.map((s, i) => {
               const done = i < index;
               const active = i === index;
+              const locked = i > highestUnlocked;
               return (
                 <li key={s.id}>
                   <button
-                    onClick={() => setIndex(i)}
+                    type="button"
+                    onClick={() => goToStep(i)}
+                    disabled={locked}
                     className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs transition-colors ${
                       active
                         ? "bg-primary text-primary-foreground font-semibold"
-                        : "hover:bg-muted text-muted-foreground"
+                        : locked
+                          ? "cursor-not-allowed text-muted-foreground/50"
+                          : "hover:bg-muted text-muted-foreground"
                     }`}
                   >
                     <span
@@ -150,74 +213,51 @@ function AssessmentPage() {
       </aside>
 
       <div>
-        {submitted ? (
-          <div className="surface-card animate-rise p-10 text-center">
-            <span className="mx-auto grid size-16 place-items-center rounded-full bg-success/12 text-success">
-              <CheckCircle2 className="size-8" />
-            </span>
-            <h1 className="mt-6 text-2xl font-semibold">Assessment submitted</h1>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Our AI is analysing your financial picture now. A qualified solicitor will review the
-              recommendation before it's released — usually within 48 hours.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button asChild>
-                <Link to="/recommendation">
-                  <Sparkles className="size-4" /> View AI recommendation
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/dashboard">Back to dashboard</Link>
-              </Button>
+        <div className="surface-card animate-rise p-6 sm:p-8" key={step.id}>
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {step.group}
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold">{step.title}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{step.summary}</p>
+
+          {step.id === 17 ? (
+            <ReviewPanel values={values} />
+          ) : (
+            <div className="mt-8 grid gap-5 sm:grid-cols-2">
+              {step.fields.map((f) => (
+                <FieldControl
+                  key={f.name}
+                  field={f}
+                  value={values[f.name] ?? ""}
+                  error={errors[f.name]}
+                  onChange={(v) => set(f.name, v)}
+                />
+              ))}
             </div>
-          </div>
-        ) : (
-          <div className="surface-card animate-rise p-6 sm:p-8" key={step.id}>
-            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {step.group}
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold">{step.title}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{step.summary}</p>
+          )}
 
-            {step.id === 17 ? (
-              <ReviewPanel values={values} />
-            ) : (
-              <div className="mt-8 grid gap-5 sm:grid-cols-2">
-                {step.fields.map((f) => (
-                  <FieldControl
-                    key={f.name}
-                    field={f}
-                    value={values[f.name] ?? ""}
-                    error={errors[f.name]}
-                    onChange={(v) => set(f.name, v)}
-                  />
-                ))}
-              </div>
-            )}
-
-            <div className="mt-10 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
-              <Button variant="ghost" onClick={goBack} disabled={index === 0}>
-                <ArrowLeft className="size-4" /> Previous
+          <div className="mt-10 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <Button variant="ghost" onClick={goBack} disabled={index === 0}>
+              <ArrowLeft className="size-4" /> Previous
+            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={saveDraft} disabled={saving}>
+                {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                Save as draft
               </Button>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={saveDraft} disabled={saving}>
-                  {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                  Save as draft
+              {step.id === steps.length ? (
+                <Button onClick={submit} disabled={saving}>
+                  {saving ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                  Submit assessment
                 </Button>
-                {step.id === steps.length ? (
-                  <Button onClick={submit} disabled={saving}>
-                    {saving ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                    Submit assessment
-                  </Button>
-                ) : (
-                  <Button onClick={goNext}>
-                    Next step <ArrowRight className="size-4" />
-                  </Button>
-                )}
-              </div>
+              ) : (
+                <Button onClick={goNext}>
+                  Next step <ArrowRight className="size-4" />
+                </Button>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

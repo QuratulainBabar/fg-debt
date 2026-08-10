@@ -8,10 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 export const Route = createFileRoute("/_portal/assistant")({
   head: () => ({
     meta: [
-      { title: "AI Assistant — FG Debt Advisor AI" },
-      { name: "description", content: "Ask the FG Debt Advisor AI assistant about debt terminology, your case status, documents and next steps." },
-      { property: "og:title", content: "AI Assistant — FG Debt Advisor AI" },
-      { property: "og:description", content: "A conversational assistant for your debt advice journey." },
+      { title: "AI Adviser — FG Debt Advisor AI" },
+      { name: "description", content: "Ask the FG Debt Advisor AI Adviser about debt terminology, your case status, documents and next steps." },
+      { property: "og:title", content: "AI Adviser — FG Debt Advisor AI" },
+      { property: "og:description", content: "A conversational AI Adviser for your debt advice journey." },
     ],
   }),
   component: AssistantPage,
@@ -23,7 +23,7 @@ const seed: Msg[] = [
   {
     id: 1,
     role: "ai",
-    text: "Hello Amelia — I'm the FG Debt Advisor AI assistant. I can explain debt terminology, check your case status, remind you what's outstanding and help with uploads. What would you like to know?",
+    text: "Hello Amelia — I'm the FG Debt Advisor AI Adviser. I can explain debt terminology, check your case status, remind you what's outstanding and help with uploads. What would you like to know?",
   },
 ];
 
@@ -98,9 +98,9 @@ function AssistantPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Support"
-        title="FG Debt Advisor AI"
-        description="Plain-English answers about your case, debt terminology and next steps. The assistant cannot approve solutions — that's always a solicitor's decision."
+        eyebrow="AI support"
+        title="AI Adviser"
+        description="Plain-English answers about your case, debt terminology and next steps. The AI Adviser cannot approve solutions — that's always a solicitor's decision."
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
@@ -110,7 +110,7 @@ function AssistantPage() {
               <Bot className="size-5" />
             </span>
             <div>
-              <p className="text-sm font-semibold">FG Debt Advisor AI Assistant</p>
+              <p className="text-sm font-semibold">FG Debt Advisor AI Adviser</p>
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <span className="size-1.5 rounded-full bg-success" /> Online
               </p>

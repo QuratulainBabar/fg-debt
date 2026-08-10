@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { setCurrentRole } from "@/lib/auth";
+import { resetAssessmentProgress } from "@/lib/assessment-progress";
+import { ASSESSMENT_PATH } from "@/lib/assessment-guard";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -40,9 +43,11 @@ function RegisterPage() {
     if (Object.keys(next).length) return;
     setLoading(true);
     setTimeout(() => {
+      resetAssessmentProgress();
+      setCurrentRole("client");
       setLoading(false);
       toast.success("Account created", { description: "Let's start your debt assessment." });
-      navigate({ to: "/assessment" });
+      navigate({ to: ASSESSMENT_PATH });
     }, 1000);
   };
 
