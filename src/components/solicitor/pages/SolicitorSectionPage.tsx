@@ -488,7 +488,7 @@ function ReportPage(spec: (typeof REPORT_SPECS)[string]) {
   );
 }
 
-function ReferralsPage(mode: "list" | "create" | "pack" | "status") {
+function ReferralsPage({ mode }: { mode: "list" | "create" | "pack" | "status" }) {
   const allReferrals = INITIAL_MATTERS.flatMap((m) =>
     m.referrals.map((r) => ({ ...r, matterId: m.id, clientName: m.clientName }))
   );
@@ -794,7 +794,7 @@ function ReferralsPage(mode: "list" | "create" | "pack" | "status") {
   );
 }
 
-function CompliancePage(slug: string) {
+function CompliancePage({ slug }: { slug: string }) {
   const docs = INITIAL_MATTERS.flatMap((m) =>
     m.documents.map((d) => ({ ...d, matterId: m.id, clientName: m.clientName }))
   );
@@ -2028,7 +2028,7 @@ function FinancialSummaryPage() {
   );
 }
 
-function FallbackSectionPage(path: string) {
+function FallbackSectionPage({ path }: { path: string }) {
   const item = solicitorNav.flatMap((g) => g.items).find((i) => i.to === `/solicitor/${path}`);
   return (
     <div className="space-y-6 pb-10">
