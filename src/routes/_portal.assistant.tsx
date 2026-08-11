@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Bot, FileUp, HelpCircle, SendHorizonal, Sparkles, User } from "lucide-react";
+import { Bot, FileUp, HelpCircle, Info, SendHorizonal, Sparkles, User } from "lucide-react";
 import { PageHeader } from "@/components/portal/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -98,10 +98,19 @@ function AssistantPage() {
   return (
     <>
       <PageHeader
-        eyebrow="AI support"
+        eyebrow="AI Client Adviser"
         title="AI Adviser"
-        description="Plain-English answers about your case, debt terminology and next steps. The AI Adviser cannot approve solutions — that's always a solicitor's decision."
+        description="Plain-English answers about your case, debt terminology and next steps."
       />
+
+      <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-sm text-amber-950 dark:text-amber-200">
+        <Info className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <p>
+          <strong>Solicitor approval required for final legal advice.</strong> The AI Adviser can
+          explain options, check documents and provide status updates, but only a regulated solicitor
+          may approve and issue final legal advice.
+        </p>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         <section className="surface-card flex h-[640px] flex-col overflow-hidden">

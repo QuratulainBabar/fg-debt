@@ -41,6 +41,13 @@ import { Route as PortalStatusUpdatesRouteImport } from './routes/_portal.status
 import { Route as PortalUploadDocumentsRouteImport } from './routes/_portal.upload-documents'
 import { Route as PortalVerificationRouteImport } from './routes/_portal.verification'
 import { Route as PortalVulnerabilityAssessmentRouteImport } from './routes/_portal.vulnerability-assessment'
+import { Route as PortalAiClientAdviserSectionRouteImport } from './routes/_portal.ai-client-adviser.$section'
+import { Route as PortalAiFinancialStatementSectionRouteImport } from './routes/_portal.ai-financial-statement.$section'
+import { Route as PortalDebtAnalysisEngineSectionRouteImport } from './routes/_portal.debt-analysis-engine.$section'
+import { Route as PortalDebtSolutionEngineSectionRouteImport } from './routes/_portal.debt-solution-engine.$section'
+import { Route as PortalDocumentGeneratorSectionRouteImport } from './routes/_portal.document-generator.$section'
+import { Route as PortalRiskEngineSectionRouteImport } from './routes/_portal.risk-engine.$section'
+import { Route as PortalVulnerabilityModuleSectionRouteImport } from './routes/_portal.vulnerability-module.$section'
 import { Route as SolicitorSolicitorIndexRouteImport } from './routes/_solicitor.solicitor.index'
 import { Route as SolicitorSolicitorSplatRouteImport } from './routes/_solicitor.solicitor.$'
 import { Route as SolicitorSolicitorAuditRouteImport } from './routes/_solicitor.solicitor.audit'
@@ -213,6 +220,47 @@ const PortalVulnerabilityAssessmentRoute =
     path: '/vulnerability-assessment',
     getParentRoute: () => PortalRoute,
   } as any)
+const PortalAiClientAdviserSectionRoute =
+  PortalAiClientAdviserSectionRouteImport.update({
+    id: '/ai-client-adviser/$section',
+    path: '/ai-client-adviser/$section',
+    getParentRoute: () => PortalRoute,
+  } as any)
+const PortalAiFinancialStatementSectionRoute =
+  PortalAiFinancialStatementSectionRouteImport.update({
+    id: '/ai-financial-statement/$section',
+    path: '/ai-financial-statement/$section',
+    getParentRoute: () => PortalRoute,
+  } as any)
+const PortalDebtAnalysisEngineSectionRoute =
+  PortalDebtAnalysisEngineSectionRouteImport.update({
+    id: '/debt-analysis-engine/$section',
+    path: '/debt-analysis-engine/$section',
+    getParentRoute: () => PortalRoute,
+  } as any)
+const PortalDebtSolutionEngineSectionRoute =
+  PortalDebtSolutionEngineSectionRouteImport.update({
+    id: '/debt-solution-engine/$section',
+    path: '/debt-solution-engine/$section',
+    getParentRoute: () => PortalRoute,
+  } as any)
+const PortalDocumentGeneratorSectionRoute =
+  PortalDocumentGeneratorSectionRouteImport.update({
+    id: '/document-generator/$section',
+    path: '/document-generator/$section',
+    getParentRoute: () => PortalRoute,
+  } as any)
+const PortalRiskEngineSectionRoute = PortalRiskEngineSectionRouteImport.update({
+  id: '/risk-engine/$section',
+  path: '/risk-engine/$section',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalVulnerabilityModuleSectionRoute =
+  PortalVulnerabilityModuleSectionRouteImport.update({
+    id: '/vulnerability-module/$section',
+    path: '/vulnerability-module/$section',
+    getParentRoute: () => PortalRoute,
+  } as any)
 const SolicitorSolicitorIndexRoute = SolicitorSolicitorIndexRouteImport.update({
   id: '/solicitor/',
   path: '/solicitor/',
@@ -289,6 +337,13 @@ export interface FileRoutesByFullPath {
   '/upload-documents': typeof PortalUploadDocumentsRoute
   '/verification': typeof PortalVerificationRoute
   '/vulnerability-assessment': typeof PortalVulnerabilityAssessmentRoute
+  '/ai-client-adviser/$section': typeof PortalAiClientAdviserSectionRoute
+  '/ai-financial-statement/$section': typeof PortalAiFinancialStatementSectionRoute
+  '/debt-analysis-engine/$section': typeof PortalDebtAnalysisEngineSectionRoute
+  '/debt-solution-engine/$section': typeof PortalDebtSolutionEngineSectionRoute
+  '/document-generator/$section': typeof PortalDocumentGeneratorSectionRoute
+  '/risk-engine/$section': typeof PortalRiskEngineSectionRoute
+  '/vulnerability-module/$section': typeof PortalVulnerabilityModuleSectionRoute
   '/solicitor/$': typeof SolicitorSolicitorSplatRoute
   '/solicitor/audit': typeof SolicitorSolicitorAuditRoute
   '/solicitor/documents': typeof SolicitorSolicitorDocumentsRoute
@@ -329,6 +384,13 @@ export interface FileRoutesByTo {
   '/upload-documents': typeof PortalUploadDocumentsRoute
   '/verification': typeof PortalVerificationRoute
   '/vulnerability-assessment': typeof PortalVulnerabilityAssessmentRoute
+  '/ai-client-adviser/$section': typeof PortalAiClientAdviserSectionRoute
+  '/ai-financial-statement/$section': typeof PortalAiFinancialStatementSectionRoute
+  '/debt-analysis-engine/$section': typeof PortalDebtAnalysisEngineSectionRoute
+  '/debt-solution-engine/$section': typeof PortalDebtSolutionEngineSectionRoute
+  '/document-generator/$section': typeof PortalDocumentGeneratorSectionRoute
+  '/risk-engine/$section': typeof PortalRiskEngineSectionRoute
+  '/vulnerability-module/$section': typeof PortalVulnerabilityModuleSectionRoute
   '/solicitor/$': typeof SolicitorSolicitorSplatRoute
   '/solicitor/audit': typeof SolicitorSolicitorAuditRoute
   '/solicitor/documents': typeof SolicitorSolicitorDocumentsRoute
@@ -372,6 +434,13 @@ export interface FileRoutesById {
   '/_portal/upload-documents': typeof PortalUploadDocumentsRoute
   '/_portal/verification': typeof PortalVerificationRoute
   '/_portal/vulnerability-assessment': typeof PortalVulnerabilityAssessmentRoute
+  '/_portal/ai-client-adviser/$section': typeof PortalAiClientAdviserSectionRoute
+  '/_portal/ai-financial-statement/$section': typeof PortalAiFinancialStatementSectionRoute
+  '/_portal/debt-analysis-engine/$section': typeof PortalDebtAnalysisEngineSectionRoute
+  '/_portal/debt-solution-engine/$section': typeof PortalDebtSolutionEngineSectionRoute
+  '/_portal/document-generator/$section': typeof PortalDocumentGeneratorSectionRoute
+  '/_portal/risk-engine/$section': typeof PortalRiskEngineSectionRoute
+  '/_portal/vulnerability-module/$section': typeof PortalVulnerabilityModuleSectionRoute
   '/_solicitor/solicitor/$': typeof SolicitorSolicitorSplatRoute
   '/_solicitor/solicitor/audit': typeof SolicitorSolicitorAuditRoute
   '/_solicitor/solicitor/documents': typeof SolicitorSolicitorDocumentsRoute
@@ -414,6 +483,13 @@ export interface FileRouteTypes {
     | '/upload-documents'
     | '/verification'
     | '/vulnerability-assessment'
+    | '/ai-client-adviser/$section'
+    | '/ai-financial-statement/$section'
+    | '/debt-analysis-engine/$section'
+    | '/debt-solution-engine/$section'
+    | '/document-generator/$section'
+    | '/risk-engine/$section'
+    | '/vulnerability-module/$section'
     | '/solicitor/$'
     | '/solicitor/audit'
     | '/solicitor/documents'
@@ -454,6 +530,13 @@ export interface FileRouteTypes {
     | '/upload-documents'
     | '/verification'
     | '/vulnerability-assessment'
+    | '/ai-client-adviser/$section'
+    | '/ai-financial-statement/$section'
+    | '/debt-analysis-engine/$section'
+    | '/debt-solution-engine/$section'
+    | '/document-generator/$section'
+    | '/risk-engine/$section'
+    | '/vulnerability-module/$section'
     | '/solicitor/$'
     | '/solicitor/audit'
     | '/solicitor/documents'
@@ -496,6 +579,13 @@ export interface FileRouteTypes {
     | '/_portal/upload-documents'
     | '/_portal/verification'
     | '/_portal/vulnerability-assessment'
+    | '/_portal/ai-client-adviser/$section'
+    | '/_portal/ai-financial-statement/$section'
+    | '/_portal/debt-analysis-engine/$section'
+    | '/_portal/debt-solution-engine/$section'
+    | '/_portal/document-generator/$section'
+    | '/_portal/risk-engine/$section'
+    | '/_portal/vulnerability-module/$section'
     | '/_solicitor/solicitor/$'
     | '/_solicitor/solicitor/audit'
     | '/_solicitor/solicitor/documents'
@@ -742,6 +832,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalVulnerabilityAssessmentRouteImport
       parentRoute: typeof PortalRoute
     }
+    '/_portal/ai-client-adviser/$section': {
+      id: '/_portal/ai-client-adviser/$section'
+      path: '/ai-client-adviser/$section'
+      fullPath: '/ai-client-adviser/$section'
+      preLoaderRoute: typeof PortalAiClientAdviserSectionRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/ai-financial-statement/$section': {
+      id: '/_portal/ai-financial-statement/$section'
+      path: '/ai-financial-statement/$section'
+      fullPath: '/ai-financial-statement/$section'
+      preLoaderRoute: typeof PortalAiFinancialStatementSectionRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/debt-analysis-engine/$section': {
+      id: '/_portal/debt-analysis-engine/$section'
+      path: '/debt-analysis-engine/$section'
+      fullPath: '/debt-analysis-engine/$section'
+      preLoaderRoute: typeof PortalDebtAnalysisEngineSectionRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/debt-solution-engine/$section': {
+      id: '/_portal/debt-solution-engine/$section'
+      path: '/debt-solution-engine/$section'
+      fullPath: '/debt-solution-engine/$section'
+      preLoaderRoute: typeof PortalDebtSolutionEngineSectionRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/document-generator/$section': {
+      id: '/_portal/document-generator/$section'
+      path: '/document-generator/$section'
+      fullPath: '/document-generator/$section'
+      preLoaderRoute: typeof PortalDocumentGeneratorSectionRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/risk-engine/$section': {
+      id: '/_portal/risk-engine/$section'
+      path: '/risk-engine/$section'
+      fullPath: '/risk-engine/$section'
+      preLoaderRoute: typeof PortalRiskEngineSectionRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/_portal/vulnerability-module/$section': {
+      id: '/_portal/vulnerability-module/$section'
+      path: '/vulnerability-module/$section'
+      fullPath: '/vulnerability-module/$section'
+      preLoaderRoute: typeof PortalVulnerabilityModuleSectionRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/_solicitor/solicitor/': {
       id: '/_solicitor/solicitor/'
       path: '/solicitor'
@@ -827,6 +966,13 @@ interface PortalRouteChildren {
   PortalUploadDocumentsRoute: typeof PortalUploadDocumentsRoute
   PortalVerificationRoute: typeof PortalVerificationRoute
   PortalVulnerabilityAssessmentRoute: typeof PortalVulnerabilityAssessmentRoute
+  PortalAiClientAdviserSectionRoute: typeof PortalAiClientAdviserSectionRoute
+  PortalAiFinancialStatementSectionRoute: typeof PortalAiFinancialStatementSectionRoute
+  PortalDebtAnalysisEngineSectionRoute: typeof PortalDebtAnalysisEngineSectionRoute
+  PortalDebtSolutionEngineSectionRoute: typeof PortalDebtSolutionEngineSectionRoute
+  PortalDocumentGeneratorSectionRoute: typeof PortalDocumentGeneratorSectionRoute
+  PortalRiskEngineSectionRoute: typeof PortalRiskEngineSectionRoute
+  PortalVulnerabilityModuleSectionRoute: typeof PortalVulnerabilityModuleSectionRoute
 }
 
 const PortalRouteChildren: PortalRouteChildren = {
@@ -855,6 +1001,14 @@ const PortalRouteChildren: PortalRouteChildren = {
   PortalUploadDocumentsRoute: PortalUploadDocumentsRoute,
   PortalVerificationRoute: PortalVerificationRoute,
   PortalVulnerabilityAssessmentRoute: PortalVulnerabilityAssessmentRoute,
+  PortalAiClientAdviserSectionRoute: PortalAiClientAdviserSectionRoute,
+  PortalAiFinancialStatementSectionRoute:
+    PortalAiFinancialStatementSectionRoute,
+  PortalDebtAnalysisEngineSectionRoute: PortalDebtAnalysisEngineSectionRoute,
+  PortalDebtSolutionEngineSectionRoute: PortalDebtSolutionEngineSectionRoute,
+  PortalDocumentGeneratorSectionRoute: PortalDocumentGeneratorSectionRoute,
+  PortalRiskEngineSectionRoute: PortalRiskEngineSectionRoute,
+  PortalVulnerabilityModuleSectionRoute: PortalVulnerabilityModuleSectionRoute,
 }
 
 const PortalRouteWithChildren =

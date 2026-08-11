@@ -3,6 +3,7 @@ const map: Record<string, string> = {
   Completed: "bg-success/12 text-success border-success/25",
   Accepted: "bg-success/12 text-success border-success/25",
   Approved: "bg-success/12 text-success border-success/25",
+  Recommended: "bg-success/12 text-success border-success/25",
   "In progress": "bg-accent/20 text-primary border-accent/40",
   "In review": "bg-accent/20 text-primary border-accent/40",
   "Solicitor review": "bg-accent/20 text-primary border-accent/40",
@@ -10,6 +11,7 @@ const map: Record<string, string> = {
   Draft: "bg-muted text-muted-foreground border-border",
   Closed: "bg-muted text-muted-foreground border-border",
   "Action required": "bg-warning/18 text-warning border-warning/35",
+  Clear: "bg-success/12 text-success border-success/25",
   Rejected: "bg-destructive/12 text-destructive border-destructive/25",
 };
 
