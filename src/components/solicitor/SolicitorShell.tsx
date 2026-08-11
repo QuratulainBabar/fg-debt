@@ -18,6 +18,27 @@ import { solicitorNav } from "@/lib/solicitor-nav";
 import { GlobalSearchModal } from "./GlobalSearchModal";
 import { toast } from "sonner";
 
+const DEDICATED_SOLICITOR_PATHS = new Set([
+  "/solicitor",
+  "/solicitor/",
+  "/solicitor/matters",
+  "/solicitor/notifications",
+  "/solicitor/tasks",
+  "/solicitor/documents",
+  "/solicitor/audit",
+]);
+
+function solicitorLinkProps(to: string) {
+  if (DEDICATED_SOLICITOR_PATHS.has(to) || to.startsWith("/solicitor/matters/")) {
+    return { to: to as any };
+  }
+  const splat = to.replace(/^\/solicitor\/?/, "").replace(/\/+$/, "");
+  return {
+    to: "/solicitor/$" as const,
+    params: { _splat: splat } as any,
+  };
+}
+
 function SolicitorSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -52,10 +73,11 @@ function SolicitorSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                       pathname === "/solicitor/matters/" ||
                       pathname.startsWith("/solicitor/matters/")
                     : pathname === item.to || pathname === `${item.to}/`;
+              const linkProps = solicitorLinkProps(item.to);
               return (
                 <Link
                   key={item.to}
-                  to={item.to as any}
+                  {...linkProps}
                   onClick={onNavigate}
                   className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all ${
                     active

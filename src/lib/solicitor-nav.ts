@@ -10,10 +10,14 @@ import {
   ClipboardCheck,
   ClipboardList,
   Cloud,
+  CreditCard,
   FileCheck2,
+  FileSearch,
   FileSignature,
   FileStack,
   FileText,
+  FileWarning,
+  Flag,
   FolderOpen,
   Gauge,
   GitBranch,
@@ -28,6 +32,7 @@ import {
   ScanLine,
   ScrollText,
   Send,
+  Shield,
   ShieldAlert,
   ShieldCheck,
   ShieldQuestion,
@@ -61,19 +66,66 @@ export const solicitorNav: SolicitorNavGroup[] = [
     ],
   },
   {
-    group: "Matter Review",
+    group: "AI Financial Statement",
     items: [
-      { to: "/solicitor/review/overview", label: "Overview", icon: ClipboardList, reviewTab: "overview" },
       { to: "/solicitor/review/financial-statement", label: "Financial Statement", icon: Banknote, reviewTab: "financial" },
-      { to: "/solicitor/review/debt-review", label: "Debt Review", icon: TableProperties, reviewTab: "debts" },
-      { to: "/solicitor/review/vulnerability-review", label: "Vulnerability Review", icon: ShieldQuestion, reviewTab: "vulnerabilities" },
-      { to: "/solicitor/review/risk-review", label: "Risk Review", icon: ShieldAlert, reviewTab: "risks" },
-      { to: "/solicitor/review/ai-recommendation", label: "AI Recommendation", icon: Sparkles, reviewTab: "ai_rec" },
-      { to: "/solicitor/review/decision", label: "Decision", icon: Scale, reviewTab: "ai_rec" },
+      { to: "/solicitor/financial-summary", label: "Financial Summary", icon: PieChart },
     ],
   },
   {
-    group: "Documents & Letters",
+    group: "Debt Analysis Engine",
+    items: [
+      { to: "/solicitor/review/debt-review", label: "Debt Review", icon: TableProperties, reviewTab: "debts" },
+      { to: "/solicitor/debt-analysis-engine/debt-summary", label: "Debt Summary", icon: ClipboardList },
+      { to: "/solicitor/debt-analysis-engine/priority-debts", label: "Priority Debts", icon: AlertTriangle },
+      { to: "/solicitor/debt-analysis-engine/non-priority-debts", label: "Non-Priority Debts", icon: CreditCard },
+      { to: "/solicitor/debt-analysis-engine/secured-debts", label: "Secured Debts", icon: Shield },
+    ],
+  },
+  {
+    group: "Vulnerability Assessment",
+    items: [
+      { to: "/solicitor/review/vulnerability-review", label: "Vulnerability Review", icon: ShieldQuestion, reviewTab: "vulnerabilities" },
+      { to: "/solicitor/vulnerability-assessment/risk-assessment", label: "Risk Assessment", icon: ShieldAlert },
+      { to: "/solicitor/vulnerability-assessment/solicitor-review-flag", label: "Solicitor Review Flag", icon: Flag },
+    ],
+  },
+  {
+    group: "Debt Solution Engine",
+    items: [
+      { to: "/solicitor/review/ai-recommendation", label: "AI Recommendation", icon: Sparkles, reviewTab: "ai_rec" },
+      { to: "/solicitor/review/decision", label: "Decision", icon: Scale, reviewTab: "ai_rec" },
+      { to: "/solicitor/debt-solution-engine/advantages", label: "Advantages", icon: CheckCircle2 },
+      { to: "/solicitor/debt-solution-engine/disadvantages", label: "Disadvantages", icon: AlertTriangle },
+      { to: "/solicitor/debt-solution-engine/eligibility", label: "Eligibility", icon: ClipboardCheck },
+      { to: "/solicitor/debt-solution-engine/risks", label: "Risks", icon: ShieldAlert },
+      { to: "/solicitor/debt-solution-engine/alternative-options", label: "Alternative Options", icon: GitBranch },
+      { to: "/solicitor/debt-solution-engine/why-recommended", label: "Why Recommended", icon: FileCheck2 },
+      { to: "/solicitor/debt-solution-engine/why-rejected", label: "Why Rejected", icon: Flag },
+    ],
+  },
+  {
+    group: "AI Legal Rules Engine",
+    items: [
+      { to: "/solicitor/rules/legal", label: "Legal Rules", icon: Scale },
+      { to: "/solicitor/rules/risk", label: "Risk Rules", icon: ShieldAlert },
+      { to: "/solicitor/rules/debt-solution", label: "Debt Solution Rules", icon: Gauge },
+      { to: "/solicitor/rules/vulnerability", label: "Vulnerability Rules", icon: ShieldQuestion },
+      { to: "/solicitor/rules/document-templates", label: "Document Templates", icon: FileText },
+      { to: "/solicitor/rules/workflow-reminders", label: "Workflow & Reminders", icon: Workflow },
+    ],
+  },
+  {
+    group: "Risk Engine",
+    items: [
+      { to: "/solicitor/review/risk-review", label: "Risk Review", icon: ShieldAlert, reviewTab: "risks" },
+      { to: "/solicitor/risk-engine/risk-identification", label: "Risk Identification", icon: FileSearch },
+      { to: "/solicitor/risk-engine/risk-score", label: "Risk Score", icon: Gauge },
+      { to: "/solicitor/risk-engine/missing-documents", label: "Missing Documents", icon: FileWarning },
+    ],
+  },
+  {
+    group: "Document Generator",
     items: [
       { to: "/solicitor/documents", label: "Document List", icon: FolderOpen },
       { to: "/solicitor/letters/financial-statement", label: "Financial Statement", icon: FileText },
@@ -91,7 +143,7 @@ export const solicitorNav: SolicitorNavGroup[] = [
     ],
   },
   {
-    group: "Referrals",
+    group: "Referral Engine",
     items: [
       { to: "/solicitor/referrals", label: "Referral List", icon: Handshake },
       { to: "/solicitor/referrals/create", label: "Create Referral", icon: Send },
@@ -100,7 +152,7 @@ export const solicitorNav: SolicitorNavGroup[] = [
     ],
   },
   {
-    group: "Compliance & Audit",
+    group: "Compliance Engine",
     items: [
       { to: "/solicitor/audit", label: "Audit Log", icon: History },
       { to: "/solicitor/compliance/advice-history", label: "Advice History", icon: BookOpen },
@@ -115,17 +167,6 @@ export const solicitorNav: SolicitorNavGroup[] = [
     ],
   },
   {
-    group: "Rules & Configuration",
-    items: [
-      { to: "/solicitor/rules/legal", label: "Legal Rules", icon: Scale },
-      { to: "/solicitor/rules/risk", label: "Risk Rules", icon: ShieldAlert },
-      { to: "/solicitor/rules/debt-solution", label: "Debt Solution Rules", icon: Gauge },
-      { to: "/solicitor/rules/vulnerability", label: "Vulnerability Rules", icon: ShieldQuestion },
-      { to: "/solicitor/rules/document-templates", label: "Document Templates", icon: FileText },
-      { to: "/solicitor/rules/workflow-reminders", label: "Workflow & Reminders", icon: Workflow },
-    ],
-  },
-  {
     group: "Reporting",
     items: [
       { to: "/solicitor/reports/management", label: "Management Reports", icon: PieChart },
@@ -135,7 +176,6 @@ export const solicitorNav: SolicitorNavGroup[] = [
       { to: "/solicitor/reports/client-satisfaction", label: "Client Satisfaction", icon: UserCheck },
       { to: "/solicitor/reports/solicitor-approval-rates", label: "Solicitor Approval Rates", icon: CheckCircle2 },
       { to: "/solicitor/reports/compliance-exceptions", label: "Compliance Exceptions", icon: AlertTriangle },
-      { to: "/solicitor/reports/vulnerability-statistics", label: "Vulnerability Statistics", icon: ShieldQuestion },
     ],
   },
   {
