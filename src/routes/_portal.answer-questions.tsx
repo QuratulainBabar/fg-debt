@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { HelpCircle, MessageSquare } from "lucide-react";
 import { PageHeader } from "@/components/portal/PageHeader";
 import { Button } from "@/components/ui/button";
+import { useClientAdviserSection } from "@/lib/client-adviser-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
 
 export const Route = createFileRoute("/_portal/answer-questions")({
   head: () => ({
@@ -21,16 +23,18 @@ export const Route = createFileRoute("/_portal/answer-questions")({
   component: AnswerQuestionsPage,
 });
 
-const prompts = [
-  "What happens during solicitor review?",
-  "Can creditors still contact me?",
-  "What if my income changes?",
-  "How long does a DRO take?",
-  "Do I need to attend court?",
-  "What documents prove my income?",
-];
+function questionFromBullet(bullet: string): string {
+  const split = bullet.split(" — ");
+  return split[0]?.trim() || bullet;
+}
 
 function AnswerQuestionsPage() {
+  const { data, isLoading, isError } = useClientAdviserSection("answer-common-questions");
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+
+  const prompts = data.bullets.map(questionFromBullet);
+
   return (
     <>
       <PageHeader
@@ -54,16 +58,31 @@ function AnswerQuestionsPage() {
           <div>
             <h2 className="text-lg font-semibold">Suggested questions</h2>
             <p className="text-sm text-muted-foreground">
-              Tap one to continue in the AI Adviser chat
+              Tap one to continue in the AI Adviser chat · {data.statHint}
             </p>
           </div>
         </div>
         <ul className="grid gap-3 sm:grid-cols-2">
           {prompts.map((q) => (
             <li key={q}>
-              <Button asChild variant="outline" className="h-auto w-full justify-start whitespace-normal px-4 py-3 text-left text-sm">
+              <Button
+                asChild
+                variant="outline"
+                className="h-auto w-full justify-start whitespace-normal px-4 py-3 text-left text-sm"
+              >
                 <Link to="/assistant">{q}</Link>
               </Button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="surface-card mt-6 p-6">
+        <h2 className="text-sm font-semibold">Quick answers</h2>
+        <ul className="mt-4 space-y-3">
+          {data.bullets.map((bullet) => (
+            <li key={bullet} className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
+              {bullet}
             </li>
           ))}
         </ul>

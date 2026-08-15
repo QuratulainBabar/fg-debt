@@ -16,7 +16,9 @@ import { PageHeader } from "@/components/portal/PageHeader";
 import { StatusBadge } from "@/components/portal/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { gbp, totalDebt, disposableIncome } from "@/lib/mock-data";
+import { gbp } from "@/lib/format";
+import { getPrimaryCase, useClientPortal } from "@/lib/client-portal-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
 
 export const Route = createFileRoute("/_portal/recommendation")({
   head: () => ({
@@ -30,40 +32,50 @@ export const Route = createFileRoute("/_portal/recommendation")({
   component: RecommendationPage,
 });
 
-const reasons = [
-  "Your total unsecured debt of " + gbp(totalDebt) + " is below the £50,000 DRO threshold.",
-  "Your disposable income of " + gbp(disposableIncome) + " is under the £75 monthly limit after allowances.",
-  "You do not own property and your vehicle is valued below £2,000.",
-  "You have not entered a formal insolvency solution in the last six years.",
-];
-
-const advantages = [
-  "Qualifying debts are written off after the 12-month moratorium period",
-  "Creditors must stop contacting you and cannot add further interest",
-  "No monthly payments to creditors during the moratorium",
-  "Significantly lower cost than bankruptcy (£90 application fee)",
-];
-
-const disadvantages = [
-  "Recorded on the Individual Insolvency Register for 15 months",
-  "Remains on your credit file for six years",
-  "You cannot obtain credit over £500 without disclosure",
-  "Certain professions may be restricted while the DRO is active",
-];
-
-const alternatives = [
-  { name: "Individual Voluntary Arrangement", fit: 62, note: "Better if your income rises above the DRO limit within 12 months." },
-  { name: "Debt Management Plan", fit: 48, note: "Informal and flexible, but interest may continue to accrue." },
-  { name: "Bankruptcy", fit: 31, note: "Appropriate only if debts exceed £50,000 or assets are significant." },
-];
-
 function RecommendationPage() {
+  const { data, isLoading, isError } = useClientPortal();
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+
+  const portal = data.portal;
+  const primaryCase = getPrimaryCase(portal);
+  const recommendation = portal.aiRecommendation;
+
+  if (!recommendation) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="AI analysis"
+          title="Recommendation pending"
+          description="Complete and submit your assessment to generate a personalised debt solution recommendation."
+          actions={<StatusBadge status="Draft" />}
+        />
+        <section className="surface-card p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            No AI recommendation is available yet. Submit your debt assessment to start analysis.
+          </p>
+          <Button asChild className="mt-4">
+            <Link to="/assessment">Continue assessment</Link>
+          </Button>
+        </section>
+      </>
+    );
+  }
+
+  const monthlyPayment =
+    recommendation.solution.includes("Debt Relief Order") || recommendation.solution.includes("Breathing Space")
+      ? "£0"
+      : gbp(Math.max(portal.disposableIncome, 0));
+
   return (
     <>
       <PageHeader
-        eyebrow="AI analysis · Case CASE-1042"
+        eyebrow={`AI analysis · ${primaryCase?.matterId ?? portal.matterId ?? "Your case"}`}
         title="Your recommended debt solution"
-        description="Generated from your assessment on 24 June 2026 and cross-checked against current eligibility criteria."
+        description={
+          recommendation.summary ||
+          "Generated from your assessment and cross-checked against current eligibility criteria."
+        }
         actions={<StatusBadge status="Solicitor review" />}
       />
 
@@ -73,18 +85,17 @@ function RecommendationPage() {
             <div className="relative gradient-deep p-8 text-primary-foreground">
               <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-accent/25 blur-3xl" />
               <span className="relative inline-flex items-center gap-2 rounded-full bg-primary-foreground/12 px-3 py-1.5 text-xs font-semibold">
-                <Sparkles className="size-3.5 text-accent" /> Recommended · 91% confidence
+                <Sparkles className="size-3.5 text-accent" /> Recommended · {recommendation.confidence}% confidence
               </span>
-              <h2 className="relative mt-5 font-display text-3xl font-semibold">Debt Relief Order</h2>
+              <h2 className="relative mt-5 font-display text-3xl font-semibold">{recommendation.solution}</h2>
               <p className="relative mt-3 max-w-lg text-sm leading-relaxed text-primary-foreground/80">
-                A DRO freezes your qualifying debts for 12 months. If your circumstances don't
-                improve, the debts are written off entirely at the end of that period.
+                {recommendation.summary}
               </p>
               <div className="relative mt-6 grid max-w-md grid-cols-3 gap-4">
                 {[
-                  ["Debt covered", gbp(totalDebt)],
-                  ["Monthly payment", "£0"],
-                  ["Duration", "12 months"],
+                  ["Debt covered", gbp(portal.totalDebt)],
+                  ["Monthly payment", monthlyPayment],
+                  ["Surplus income", gbp(portal.disposableIncome)],
                 ].map(([k, v]) => (
                   <div key={k}>
                     <p className="font-display text-lg font-semibold">{v}</p>
@@ -98,7 +109,7 @@ function RecommendationPage() {
                 <Info className="size-4 text-accent" /> Why this was recommended
               </h3>
               <ul className="mt-4 space-y-3">
-                {reasons.map((r) => (
+                {recommendation.reasoning.map((r) => (
                   <li key={r} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
                     <BadgeCheck className="mt-0.5 size-4 shrink-0 text-success" />
                     {r}
@@ -114,7 +125,7 @@ function RecommendationPage() {
                 <ThumbsUp className="size-4" /> Advantages
               </h3>
               <ul className="mt-4 space-y-3">
-                {advantages.map((a) => (
+                {recommendation.advantages.map((a) => (
                   <li key={a} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
                     <Check className="mt-0.5 size-4 shrink-0 text-success" />
                     {a}
@@ -127,7 +138,7 @@ function RecommendationPage() {
                 <ThumbsDown className="size-4" /> Things to consider
               </h3>
               <ul className="mt-4 space-y-3">
-                {disadvantages.map((d) => (
+                {recommendation.disadvantages.map((d) => (
                   <li key={d} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
                     <X className="mt-0.5 size-4 shrink-0 text-warning" />
                     {d}
@@ -141,7 +152,7 @@ function RecommendationPage() {
             <h3 className="text-lg font-semibold">Alternative options considered</h3>
             <p className="text-sm text-muted-foreground">Ranked by suitability to your circumstances.</p>
             <ul className="mt-5 space-y-4">
-              {alternatives.map((a) => (
+              {recommendation.alternatives.map((a) => (
                 <li key={a.name} className="rounded-xl border border-border p-4">
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-sm font-semibold">{a.name}</p>
@@ -164,22 +175,19 @@ function RecommendationPage() {
               <Clock className="size-5 text-primary" />
               <div>
                 <p className="text-sm font-semibold">Awaiting solicitor review</p>
-                <p className="text-xs text-muted-foreground">With R. Okonkwo since 24 Jun · typically 48 hrs</p>
+                <p className="text-xs text-muted-foreground">
+                  With {primaryCase?.adviser ?? "your adviser"} · typically 48 hrs
+                </p>
               </div>
             </div>
             <ol className="mt-5 space-y-4 border-l border-border pl-4">
-              {[
-                ["Assessment analysed", "24 Jun 2026", true],
-                ["Eligibility tested", "24 Jun 2026", true],
-                ["Solicitor review", "In progress", false],
-                ["Solution issued", "Pending", false],
-              ].map(([label, date, done]) => (
-                <li key={label as string} className="relative">
+              {(primaryCase?.timeline ?? []).map((step) => (
+                <li key={step.label} className="relative">
                   <span
-                    className={`absolute -left-[21px] top-1.5 size-2 rounded-full ${done ? "bg-success" : "bg-border"}`}
+                    className={`absolute -left-[21px] top-1.5 size-2 rounded-full ${step.done ? "bg-success" : "bg-border"}`}
                   />
-                  <p className="text-sm font-medium">{label as string}</p>
-                  <p className="text-xs text-muted-foreground">{date as string}</p>
+                  <p className="text-sm font-medium">{step.label}</p>
+                  <p className="text-xs text-muted-foreground">{step.date}</p>
                 </li>
               ))}
             </ol>

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
+import { resetPasswordRequest } from "@/lib/auth-api";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -34,7 +36,7 @@ function ResetPasswordPage() {
   const navigate = useNavigate();
   const passed = rules.filter((r) => r.test(value)).length;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passed < rules.length) {
       setError("Your password does not meet all requirements yet.");
@@ -44,13 +46,23 @@ function ResetPasswordPage() {
       setError("Passwords do not match.");
       return;
     }
+    const token = new URLSearchParams(window.location.search).get("token") ?? "";
+    if (!token) {
+      setError("This reset link is missing a token. Request a new one from the forgot password page.");
+      return;
+    }
     setError("");
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await resetPasswordRequest({ token, password: value });
       toast.success("Password updated", { description: "You can now sign in with your new password." });
       navigate({ to: "/login" });
-    }, 900);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "Unable to update your password.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

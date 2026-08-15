@@ -1,11 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { Bell, Bot, CheckCheck, MessageSquare, SendHorizonal, ShieldCheck, UserRound } from "lucide-react";
 import { PageHeader } from "@/components/portal/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { messages, notifications } from "@/lib/mock-data";
+import { ApiError } from "@/lib/api";
+import { invalidateClientDerivedQueries } from "@/lib/client-cache";
+import {
+  markClientMessagesReadRequest,
+  sendClientMessageRequest,
+  useClientPortal,
+} from "@/lib/client-portal-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_portal/messages")({
   head: () => ({
@@ -19,47 +28,44 @@ export const Route = createFileRoute("/_portal/messages")({
   component: MessagesPage,
 });
 
-type Thread = { id: number; from: string; body: string; time: string; mine?: boolean };
-
-const threadBodies: Record<number, Thread[]> = {
-  1: [
-    {
-      id: 1,
-      from: "R. Okonkwo",
-      time: "09:31",
-      body: "Good morning Amelia — I've started reviewing your assessment. Everything looks consistent so far.",
-    },
-    {
-      id: 2,
-      from: "R. Okonkwo",
-      time: "09:42",
-      body: "One clarification: your childcare costs of £180 per month — is that ongoing through the summer, or term-time only? It affects the disposable income calculation.",
-    },
-  ],
-  2: [
-    { id: 1, from: "FG Debt Advisor AI", time: "Mon 08:00", body: "Your weekly case summary is ready. Progress moved from 68% to 82% and two documents were verified." },
-  ],
-  3: [
-    { id: 1, from: "Case Operations", time: "12 Jun", body: "Thanks for uploading your creditor letters — all three are readable and now attached to CASE-1042." },
-  ],
-};
-
 const notifIcon = { solicitor: ShieldCheck, system: Bell, ai: Bot };
 
 function MessagesPage() {
-  const [activeId, setActiveId] = useState(messages[0]!.id);
-  const [reply, setReply] = useState("");
-  const [sent, setSent] = useState<Thread[]>([]);
-  const active = messages.find((m) => m.id === activeId)!;
-  const thread = [...(threadBodies[activeId] ?? []), ...sent.filter(() => true)];
+  const { data, isLoading, isError } = useClientPortal();
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+  return <MessagesContent portal={data.portal} />;
+}
 
-  const send = () => {
+function MessagesContent({ portal }: { portal: import("@/lib/client-portal-api").ClientPortalData }) {
+  const queryClient = useQueryClient();
+  const thread = portal.messageThread;
+  const notifications = portal.notifications;
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    if (!thread?.unreadCount) return;
+    void markClientMessagesReadRequest()
+      .then(() => invalidateClientDerivedQueries(queryClient))
+      .catch(() => undefined);
+  }, [queryClient, thread?.matterId, thread?.unreadCount]);
+
+  const send = async () => {
     if (!reply.trim()) return;
-    setSent((s) => [
-      ...s,
-      { id: Date.now(), from: "You", time: "Just now", body: reply.trim(), mine: true },
-    ]);
-    setReply("");
+    setSending(true);
+    try {
+      await sendClientMessageRequest(reply.trim());
+      setReply("");
+      await invalidateClientDerivedQueries(queryClient);
+      toast.success("Message sent", { description: "Your solicitor will be notified." });
+    } catch (error) {
+      toast.error("Could not send message", {
+        description: error instanceof ApiError ? error.message : "Please try again.",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -74,6 +80,7 @@ function MessagesPage() {
         <TabsList className="mb-6">
           <TabsTrigger value="messages">
             <MessageSquare className="size-4" /> Messages
+            {thread?.unreadCount ? ` (${thread.unreadCount})` : ""}
           </TabsTrigger>
           <TabsTrigger value="notifications">
             <Bell className="size-4" /> Notifications
@@ -81,76 +88,62 @@ function MessagesPage() {
         </TabsList>
 
         <TabsContent value="messages">
-          <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-            <ul className="surface-card divide-y divide-border overflow-hidden p-0">
-              {messages.map((m) => (
-                <li key={m.id}>
-                  <button
-                    onClick={() => {
-                      setActiveId(m.id);
-                      setSent([]);
-                    }}
-                    aria-pressed={activeId === m.id}
-                    className={`w-full p-4 text-left transition-colors hover:bg-muted/60 ${
-                      activeId === m.id ? "bg-accent/12" : ""
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold">{m.from}</p>
-                      <span className="text-[0.68rem] text-muted-foreground">{m.time}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{m.role}</p>
-                    <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                      {m.preview}
-                    </p>
-                    {m.unread && (
-                      <span className="mt-2 inline-block rounded-full bg-accent/25 px-2 py-0.5 text-[0.65rem] font-semibold text-primary">
-                        Unread
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-
+          {!thread?.matterId ? (
+            <section className="surface-card p-10 text-center">
+              <p className="text-sm text-muted-foreground">
+                Submit your debt assessment to open secure messaging with your assigned solicitor.
+              </p>
+            </section>
+          ) : (
             <section className="surface-card flex h-[560px] flex-col overflow-hidden">
               <header className="flex items-center gap-3 border-b border-border p-4">
                 <span className="grid size-10 place-items-center rounded-xl bg-secondary/70 text-primary">
                   <UserRound className="size-5" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold">{active.from}</p>
-                  <p className="text-xs text-muted-foreground">{active.role} · CASE-1042</p>
+                  <p className="text-sm font-semibold">{thread.adviser}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Solicitor · {thread.matterId}
+                  </p>
                 </div>
               </header>
 
               <div className="flex-1 space-y-4 overflow-y-auto p-5">
-                {thread.map((t) => (
-                  <div key={t.id} className={`flex ${t.mine ? "justify-end" : ""}`}>
-                    <div
-                      className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                        t.mine
-                          ? "rounded-tr-sm bg-primary text-primary-foreground"
-                          : "rounded-tl-sm bg-secondary/60 text-foreground"
-                      }`}
-                    >
-                      {t.body}
-                      <p
-                        className={`mt-1.5 text-[0.65rem] ${
-                          t.mine ? "text-primary-foreground/70" : "text-muted-foreground"
+                {thread.messages.length === 0 ? (
+                  <p className="text-center text-sm text-muted-foreground">
+                    No messages yet. Send a secure message to your solicitor below.
+                  </p>
+                ) : (
+                  thread.messages.map((message) => (
+                    <div key={message.id} className={`flex ${message.mine ? "justify-end" : ""}`}>
+                      <div
+                        className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                          message.mine
+                            ? "rounded-tr-sm bg-primary text-primary-foreground"
+                            : "rounded-tl-sm bg-secondary/60 text-foreground"
                         }`}
                       >
-                        {t.time}
-                      </p>
+                        {!message.mine && (
+                          <p className="mb-1 text-[0.65rem] font-semibold opacity-80">{message.author}</p>
+                        )}
+                        {message.content}
+                        <p
+                          className={`mt-1.5 text-[0.65rem] ${
+                            message.mine ? "text-primary-foreground/70" : "text-muted-foreground"
+                          }`}
+                        >
+                          {message.sentAt}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  send();
+                  void send();
                 }}
                 className="flex items-end gap-2 border-t border-border p-4"
               >
@@ -158,16 +151,22 @@ function MessagesPage() {
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}
                   rows={2}
-                  placeholder="Write a secure reply…"
+                  placeholder="Write a secure message to your solicitor…"
                   className="resize-none"
-                  aria-label="Reply message"
+                  aria-label="Message to solicitor"
                 />
-                <Button type="submit" size="icon" className="size-10 shrink-0" aria-label="Send reply">
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="size-10 shrink-0"
+                  disabled={sending || !reply.trim()}
+                  aria-label="Send message"
+                >
                   <SendHorizonal className="size-4" />
                 </Button>
               </form>
             </section>
-          </div>
+          )}
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -178,25 +177,29 @@ function MessagesPage() {
                 <CheckCheck className="size-4" /> Mark all as read
               </Button>
             </div>
-            <ul className="divide-y divide-border">
-              {notifications.map((n) => {
-                const Icon = notifIcon[n.kind];
-                return (
-                  <li key={n.id} className={`flex gap-4 p-5 ${n.unread ? "bg-accent/8" : ""}`}>
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary/70 text-primary">
-                      <Icon className="size-4" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-sm font-semibold">{n.title}</p>
-                        <span className="text-xs text-muted-foreground">{n.time} ago</span>
+            {notifications.length === 0 ? (
+              <p className="p-10 text-center text-sm text-muted-foreground">No notifications yet.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {notifications.map((n) => {
+                  const Icon = notifIcon[n.kind];
+                  return (
+                    <li key={n.id} className={`flex gap-4 p-5 ${n.unread ? "bg-accent/8" : ""}`}>
+                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary/70 text-primary">
+                        <Icon className="size-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-semibold">{n.title}</p>
+                          <span className="text-xs text-muted-foreground">{n.time}</span>
+                        </div>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{n.body}</p>
                       </div>
-                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{n.body}</p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </section>
         </TabsContent>
       </Tabs>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -11,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { AlertTriangle, CreditCard, Landmark, Percent, Users } from "lucide-react";
+import { AlertTriangle, CreditCard, Landmark, Loader2, Percent, Users } from "lucide-react";
 import { PageHeader } from "@/components/portal/PageHeader";
 import { StatCard } from "@/components/portal/StatCard";
 import { Button } from "@/components/ui/button";
@@ -24,15 +25,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  gbp,
-  nonPriorityDebts,
-  priorityDebts,
-  totalArrears,
-  totalDebt,
-  totalNonPriority,
-  totalPriority,
-} from "@/lib/mock-data";
+import { gbp } from "@/lib/format";
+import { useClientPortal } from "@/lib/client-portal-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
+import { downloadCsvExport } from "@/lib/download-export";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_portal/debt-summary")({
   head: () => ({
@@ -53,26 +50,70 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
+function parseInterestRate(value: string): number {
+  const match = value.match(/([\d.]+)/);
+  return match ? Number.parseFloat(match[1]) : 0;
+}
+
+function highestInterestRate(
+  rows: { interest: string }[],
+): string {
+  const rates = rows.map((row) => parseInterestRate(row.interest)).filter((rate) => rate > 0);
+  if (rates.length === 0) return "0%";
+  return `${Math.max(...rates).toFixed(1)}%`;
+}
+
 function DebtSummary() {
+  const { data, isLoading, isError } = useClientPortal();
+  const [exporting, setExporting] = useState(false);
+
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+
+  const portal = data.portal;
+  const { priorityDebts, nonPriorityDebts } = portal;
   const all = [...priorityDebts, ...nonPriorityDebts];
   const split = [
-    { label: "Priority", value: totalPriority },
-    { label: "Non-priority", value: totalNonPriority },
+    { label: "Priority", value: portal.totalPriority },
+    { label: "Non-priority", value: portal.totalNonPriority },
   ];
+  const highestInterest = highestInterestRate(all);
+  const accountsInArrears = all.filter((d) => d.arrears > 0).length;
+  const interestFreeTotal = all
+    .filter((d) => d.interest === "0%")
+    .reduce((sum, debt) => sum + debt.balance, 0);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await downloadCsvExport("/api/client/analysis/debt-summary/export", "creditor-schedule.csv");
+      toast.success("Creditor schedule exported");
+    } catch {
+      toast.error("Could not export creditor schedule");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
         eyebrow="Insights"
         title="Debt summary"
         description="Every creditor you've told us about, grouped by how urgently they need to be dealt with."
-        actions={<Button variant="outline">Export creditor schedule</Button>}
+        actions={
+          <Button variant="outline" disabled={exporting || all.length === 0} onClick={() => void handleExport()}>
+            {exporting ? <Loader2 className="size-4 animate-spin" /> : null}
+            Export creditor schedule
+          </Button>
+        }
       />
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={CreditCard} label="Total debt" value={gbp(totalDebt)} hint="Across all creditors" tone="deep" />
-        <StatCard icon={AlertTriangle} label="Priority debts" value={gbp(totalPriority)} hint={`${priorityDebts.length} creditors`} tone="warning" />
-        <StatCard icon={Landmark} label="Non-priority debts" value={gbp(totalNonPriority)} hint={`${nonPriorityDebts.length} creditors`} />
-        <StatCard icon={Users} label="Total arrears" value={gbp(totalArrears)} hint={`${all.length} accounts in total`} />
+        <StatCard icon={CreditCard} label="Total debt" value={gbp(portal.totalDebt)} hint="Across all creditors" tone="deep" />
+        <StatCard icon={AlertTriangle} label="Priority debts" value={gbp(portal.totalPriority)} hint={`${priorityDebts.length} creditors`} tone="warning" />
+        <StatCard icon={Landmark} label="Non-priority debts" value={gbp(portal.totalNonPriority)} hint={`${nonPriorityDebts.length} creditors`} />
+        <StatCard icon={Users} label="Total arrears" value={gbp(portal.totalArrears)} hint={`${all.length} accounts in total`} />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
@@ -124,16 +165,16 @@ function DebtSummary() {
             <div className="flex justify-between py-2.5">
               <dt className="text-muted-foreground">Highest interest rate</dt>
               <dd className="inline-flex items-center gap-1 font-semibold">
-                <Percent className="size-3.5 text-warning" /> 29.8%
+                <Percent className="size-3.5 text-warning" /> {highestInterest}
               </dd>
             </div>
             <div className="flex justify-between py-2.5">
               <dt className="text-muted-foreground">Accounts in arrears</dt>
-              <dd className="font-semibold">{all.filter((d) => d.arrears > 0).length}</dd>
+              <dd className="font-semibold">{accountsInArrears}</dd>
             </div>
             <div className="flex justify-between py-2.5">
               <dt className="text-muted-foreground">Interest-free balances</dt>
-              <dd className="font-semibold">{gbp(all.filter((d) => d.interest === "0%").reduce((s, d) => s + d.balance, 0))}</dd>
+              <dd className="font-semibold">{gbp(interestFreeTotal)}</dd>
             </div>
           </dl>
         </section>

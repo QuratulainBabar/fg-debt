@@ -11,7 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { gbp, nonPriorityDebts, priorityDebts, totalDebt } from "@/lib/mock-data";
+import { gbp } from "@/lib/format";
+import { useClientPortal } from "@/lib/client-portal-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
 
 export const Route = createFileRoute("/_portal/debt-creditor-information")({
   head: () => ({
@@ -32,9 +34,14 @@ export const Route = createFileRoute("/_portal/debt-creditor-information")({
 });
 
 function DebtCreditorInformationPage() {
+  const { data, isLoading, isError } = useClientPortal();
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+
+  const portal = data.portal;
   const all = [
-    ...priorityDebts.map((d) => ({ ...d, priority: true })),
-    ...nonPriorityDebts.map((d) => ({ ...d, priority: false })),
+    ...portal.priorityDebts.map((d) => ({ ...d, priority: true })),
+    ...portal.nonPriorityDebts.map((d) => ({ ...d, priority: false })),
   ];
 
   return (
@@ -61,7 +68,7 @@ function DebtCreditorInformationPage() {
             <div>
               <h2 className="text-lg font-semibold">Creditor schedule</h2>
               <p className="text-sm text-muted-foreground">
-                {all.length} accounts · {gbp(totalDebt)} total
+                {all.length} accounts · {gbp(portal.totalDebt)} total
               </p>
             </div>
           </div>

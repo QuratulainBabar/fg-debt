@@ -7,7 +7,8 @@ import { StatCard } from "@/components/portal/StatCard";
 import { StatusBadge } from "@/components/portal/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { referrals } from "@/lib/mock-data";
+import { useClientPortal, useAcknowledgeReferral } from "@/lib/client-portal-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
 
 export const Route = createFileRoute("/_portal/referrals")({
   head: () => ({
@@ -24,7 +25,15 @@ export const Route = createFileRoute("/_portal/referrals")({
 const inviteLink = "https://aequita.co.uk/join?ref=AQ-2026-04417";
 
 function ReferralsPage() {
+  const { data, isLoading, isError } = useClientPortal();
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+  return <ReferralsContent portal={data.portal} />;
+}
+
+function ReferralsContent({ portal }: { portal: import("@/lib/client-portal-api").ClientPortalData }) {
   const [copied, setCopied] = useState(false);
+  const acknowledgeReferral = useAcknowledgeReferral();
 
   const copy = async () => {
     try {
@@ -46,7 +55,7 @@ function ReferralsPage() {
       />
 
       <div className="grid gap-5 sm:grid-cols-3">
-        <StatCard icon={Handshake} label="Partner referrals" value={String(referrals.length)} hint="Made on your behalf" tone="deep" />
+        <StatCard icon={Handshake} label="Partner referrals" value={String(portal.referrals.length)} hint="Made on your behalf" tone="deep" />
         <StatCard icon={Users} label="People invited" value="2" hint="1 has started an assessment" />
         <StatCard icon={Gift} label="Support secured" value="£320" hint="Energy Trust grant applied" tone="positive" />
       </div>
@@ -58,24 +67,47 @@ function ReferralsPage() {
             Referrals are only made with your consent and always to FCA or charity-regulated partners.
           </p>
           <ul className="mt-5 space-y-4">
-            {referrals.map((r) => (
-              <li key={r.id} className="rounded-xl border border-border p-5 transition-colors hover:border-accent">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold tracking-wide text-muted-foreground">{r.id}</p>
-                    <h3 className="mt-1 text-base font-semibold">{r.partner}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{r.reason}</p>
-                  </div>
-                  <StatusBadge status={r.status} />
-                </div>
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-xs text-muted-foreground">
-                  <span>Referred {r.date}</span>
-                  <span className="inline-flex items-center gap-1.5 text-foreground">
-                    <ArrowRight className="size-3.5 text-accent" /> {r.next}
-                  </span>
-                </div>
+            {portal.referrals.length === 0 ? (
+              <li className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+                No partner referrals yet. When your solicitor arranges specialist support, it will appear here.
               </li>
-            ))}
+            ) : (
+              portal.referrals.map((r) => (
+                <li key={r.id} className="rounded-xl border border-border p-5 transition-colors hover:border-accent">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold tracking-wide text-muted-foreground">{r.id}</p>
+                      <h3 className="mt-1 text-base font-semibold">{r.partner}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{r.reason}</p>
+                    </div>
+                    <StatusBadge status={r.status} />
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-xs text-muted-foreground">
+                    <span>Referred {r.date}</span>
+                    <span className="inline-flex items-center gap-1.5 text-foreground">
+                      <ArrowRight className="size-3.5 text-accent" /> {r.next}
+                    </span>
+                  </div>
+                  {!r.acknowledged && (
+                    <div className="mt-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={acknowledgeReferral.isPending}
+                        onClick={() =>
+                          acknowledgeReferral.mutate(r.id, {
+                            onSuccess: () => toast.success("Referral acknowledged."),
+                            onError: () => toast.error("Could not acknowledge referral."),
+                          })
+                        }
+                      >
+                        I understand — acknowledge referral
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              ))
+            )}
           </ul>
         </section>
 

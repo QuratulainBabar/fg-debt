@@ -11,51 +11,20 @@ import { StatCard } from "@/components/portal/StatCard";
 import { StatusBadge } from "@/components/portal/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useClientRiskView, type ClientRiskSection } from "@/lib/client-risk-api";
+import type { RiskIdentificationResult, RiskScoreResult } from "@/lib/risk-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
 
 export const RISK_ENGINE_SECTIONS = ["risk-identification", "risk-score"] as const;
 
 export type RiskEngineSection = (typeof RISK_ENGINE_SECTIONS)[number];
 
-const riskCategories = [
-  { label: "Missing Documents", flagged: true, severity: "Medium" },
-  { label: "Unverified Debts", flagged: true, severity: "Medium" },
-  { label: "Unreasonable Expenditure", flagged: false, severity: "Low" },
-  { label: "Hidden Assets", flagged: false, severity: "Low" },
-  { label: "Potential Fraud Indicators", flagged: false, severity: "Low" },
-  { label: "Preference Payments", flagged: false, severity: "Low" },
-  { label: "Transactions at Undervalue", flagged: false, severity: "Low" },
-  { label: "Director Liabilities", flagged: false, severity: "Low" },
-  { label: "Guarantor Liabilities", flagged: false, severity: "Low" },
-  { label: "Pending Litigation", flagged: false, severity: "Low" },
-  { label: "Statutory Demands", flagged: false, severity: "Low" },
-  { label: "Enforcement Action", flagged: true, severity: "High" },
-] as const;
-
-const flaggedCount = riskCategories.filter((r) => r.flagged).length;
-const riskScore = Math.min(
-  100,
-  flaggedCount * 18 +
-    riskCategories.filter((r) => r.flagged && r.severity === "High").length * 12
-);
-const riskBand = riskScore >= 70 ? "High" : riskScore >= 40 ? "Medium" : "Low";
-
-const scoreDrivers = [
-  { label: "Document completeness", weight: 22, note: "Payslip and creditor letter outstanding" },
-  { label: "Debt verification", weight: 18, note: "Two accounts pending OCR confirmation" },
-  { label: "Enforcement exposure", weight: 28, note: "Priority arrears with active monitoring" },
-  { label: "Asset / transaction integrity", weight: 12, note: "No undervalue or preference flags" },
-  { label: "Litigation / statutory action", weight: 8, note: "No statutory demands recorded" },
-];
-
-const sectionMeta: Record<
+const sectionCopy: Record<
   RiskEngineSection,
   {
     title: string;
     description: string;
     icon: LucideIcon;
-    value: string;
-    hint: string;
-    tone?: "default" | "positive" | "warning" | "deep";
   }
 > = {
   "risk-identification": {
@@ -63,18 +32,12 @@ const sectionMeta: Record<
     description:
       "Compliance and case-integrity risks screened by the Risk Engine before solicitor review.",
     icon: FileSearch,
-    value: `${flaggedCount} flagged`,
-    hint: `Of ${riskCategories.length} checks`,
-    tone: "warning",
   },
   "risk-score": {
     title: "Risk Score",
     description:
       "Composite score derived from flagged risk indicators — used to prioritise solicitor triage.",
     icon: Gauge,
-    value: `${riskScore}/100`,
-    hint: `${riskBand} risk band`,
-    tone: riskBand === "High" ? "warning" : riskBand === "Medium" ? "warning" : "default",
   },
 };
 
@@ -83,48 +46,63 @@ export function isRiskEngineSection(value: string): value is RiskEngineSection {
 }
 
 export function RiskEnginePage({ section }: { section: RiskEngineSection }) {
-  const meta = sectionMeta[section];
-  const Icon = meta.icon;
+  const { data, isLoading, isError } = useClientRiskView(section as ClientRiskSection);
+  const copy = sectionCopy[section];
 
-  return (
-    <>
-      <PageHeader
-        eyebrow="Risk Engine"
-        title={meta.title}
-        description={meta.description}
-        actions={
-          <Button asChild variant="outline">
-            <Link to="/risk-assessment">Open risk overview</Link>
-          </Button>
-        }
-      />
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard icon={Icon} label={meta.title} value={meta.value} hint={meta.hint} tone={meta.tone} />
-        <StatCard
-          icon={ShieldAlert}
-          label="Overall band"
-          value={riskBand}
-          hint="Solicitor monitoring"
-          tone={riskBand === "Low" ? "positive" : "warning"}
+  const Icon = copy.icon;
+
+  if (data.view === "identification") {
+    const risk = data as RiskIdentificationResult;
+    const riskBand =
+      risk.highSeverityCount > 0 ? "High" : risk.flaggedCount > 0 ? "Medium" : "Low";
+
+    return (
+      <>
+        <PageHeader
+          eyebrow="Risk Engine"
+          title={copy.title}
+          description={copy.description}
+          actions={
+            <Button asChild variant="outline">
+              <Link to="/risk-assessment">Open risk overview</Link>
+            </Button>
+          }
         />
-        <StatCard
-          icon={AlertTriangle}
-          label="Active flags"
-          value={String(flaggedCount)}
-          hint="Require attention"
-          tone="warning"
-        />
-      </div>
 
-      {section === "risk-identification" ? (
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <StatCard
+            icon={Icon}
+            label={copy.title}
+            value={`${risk.flaggedCount} flagged`}
+            hint={`Of ${risk.checks.length} checks`}
+            tone={risk.flaggedCount > 0 ? "warning" : "default"}
+          />
+          <StatCard
+            icon={ShieldAlert}
+            label="Overall band"
+            value={riskBand}
+            hint="Solicitor monitoring"
+            tone={riskBand === "Low" ? "positive" : "warning"}
+          />
+          <StatCard
+            icon={AlertTriangle}
+            label="Active flags"
+            value={String(risk.flaggedCount)}
+            hint="Require attention"
+            tone="warning"
+          />
+        </div>
+
         <section className="surface-card mt-6 p-6">
           <h2 className="text-lg font-semibold">Identified risk categories</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Full Risk Engine checklist. Flagged items contribute to the composite risk score.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            {riskCategories.map((item) => (
+            {risk.checks.map((item) => (
               <span
                 key={item.label}
                 className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
@@ -139,7 +117,7 @@ export function RiskEnginePage({ section }: { section: RiskEngineSection }) {
             ))}
           </div>
           <ul className="mt-6 divide-y divide-border">
-            {riskCategories.map((item) => (
+            {risk.checks.map((item) => (
               <li
                 key={item.label}
                 className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
@@ -153,50 +131,91 @@ export function RiskEnginePage({ section }: { section: RiskEngineSection }) {
             ))}
           </ul>
         </section>
-      ) : (
-        <section className="surface-card mt-6 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+      </>
+    );
+  }
+
+  const risk = data as RiskScoreResult;
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Risk Engine"
+        title={copy.title}
+        description={copy.description}
+        actions={
+          <Button asChild variant="outline">
+            <Link to="/risk-assessment">Open risk overview</Link>
+          </Button>
+        }
+      />
+
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard
+          icon={Icon}
+          label={copy.title}
+          value={`${risk.riskScore}/100`}
+          hint={`${risk.riskBand} risk band`}
+          tone={risk.riskBand === "Low" ? "default" : "warning"}
+        />
+        <StatCard
+          icon={ShieldAlert}
+          label="Overall band"
+          value={risk.riskBand}
+          hint="Solicitor monitoring"
+          tone={risk.riskBand === "Low" ? "positive" : "warning"}
+        />
+        <StatCard
+          icon={AlertTriangle}
+          label="Active flags"
+          value={String(risk.flaggedCount)}
+          hint="Require attention"
+          tone="warning"
+        />
+      </div>
+
+      <section className="surface-card mt-6 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Composite risk score</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Weighted from document, verification, enforcement and integrity checks.
+            </p>
+          </div>
+          <StatusBadge status={risk.riskBand === "High" ? "Action required" : "In review"} />
+        </div>
+
+        <div className="mt-6 rounded-xl border border-border bg-muted/40 p-5">
+          <div className="flex items-end justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold">Composite risk score</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Weighted from document, verification, enforcement and integrity checks.
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Risk score
+              </p>
+              <p className="mt-1 font-display text-3xl font-bold tabular-nums text-foreground">
+                {risk.riskScore}
+                <span className="text-base font-medium text-muted-foreground"> / 100</span>
               </p>
             </div>
-            <StatusBadge status={riskBand === "High" ? "Action required" : "In review"} />
+            <p className="text-sm font-semibold text-primary">{risk.riskBand} risk</p>
           </div>
+          <Progress value={risk.riskScore} className="mt-4 h-2.5" />
+        </div>
 
-          <div className="mt-6 rounded-xl border border-border bg-muted/40 p-5">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Risk score
-                </p>
-                <p className="mt-1 font-display text-3xl font-bold tabular-nums text-foreground">
-                  {riskScore}
-                  <span className="text-base font-medium text-muted-foreground"> / 100</span>
-                </p>
+        <ul className="mt-6 space-y-4">
+          {risk.drivers.map((driver) => (
+            <li key={driver.label} className="rounded-xl border border-border bg-muted/30 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground">{driver.label}</p>
+                <span className="text-xs font-medium text-muted-foreground">
+                  Weight {driver.weight}
+                </span>
               </div>
-              <p className="text-sm font-semibold text-primary">{riskBand} risk</p>
-            </div>
-            <Progress value={riskScore} className="mt-4 h-2.5" />
-          </div>
-
-          <ul className="mt-6 space-y-4">
-            {scoreDrivers.map((driver) => (
-              <li key={driver.label} className="rounded-xl border border-border bg-muted/30 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-foreground">{driver.label}</p>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Weight {driver.weight}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">{driver.note}</p>
-                <Progress value={driver.weight * 3} className="mt-3 h-2" />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+              <p className="mt-1 text-sm text-muted-foreground">{driver.note}</p>
+              <Progress value={driver.weight * 3} className="mt-3 h-2" />
+            </li>
+          ))}
+        </ul>
+      </section>
     </>
   );
 }

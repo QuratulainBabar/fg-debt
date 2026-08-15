@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Search,
@@ -8,6 +8,8 @@ import {
   List,
   Calendar,
   ArrowUpRight,
+  Loader2,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +18,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { INITIAL_MATTERS, Matter } from "@/lib/solicitor-data";
+import { CreateMatterModal } from "@/components/solicitor/CreateMatterModal";
+import { useSolicitorMatters } from "@/lib/matters-api";
 
 export function SolicitorMattersPage() {
-  const [matters] = useState<Matter[]>(INITIAL_MATTERS);
+  const { data, isLoading, isError } = useSolicitorMatters();
+  const matters = data?.matters ?? [];
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
 
@@ -31,6 +35,7 @@ export function SolicitorMattersPage() {
   const [solutionFilter, setSolutionFilter] = useState<string>("all");
   const [missingDocsOnly, setMissingDocsOnly] = useState(false);
   const [urgentOnly, setUrgentOnly] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -59,22 +64,43 @@ export function SolicitorMattersPage() {
     if (debtLevelFilter === "10k-30k" && (m.totalDebt < 10000 || m.totalDebt > 30000)) return false;
     if (debtLevelFilter === ">30k" && m.totalDebt <= 30000) return false;
 
-    if (missingDocsOnly && !m.documents.some((d) => d.verificationStatus === "flagged" || d.ocrStatus === "needs_review"))
-      return false;
+    if (missingDocsOnly && m.documentsNeedingReview <= 0) return false;
 
     if (
       urgentOnly &&
       m.status !== "urgent_review" &&
       m.riskLevel !== "critical" &&
-      !m.tasks.some((t) => t.priority === "urgent" && t.status === "pending")
+      !m.hasUrgentPendingTask
     )
       return false;
 
     return true;
   });
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" /> Loading matters…
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-destructive">
+        Unable to load the matter list. Confirm you are signed in as a solicitor and that the API is running.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-12">
+      <CreateMatterModal
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(matterId) => navigate({ to: `/solicitor/matters/${matterId}` as any })}
+      />
+
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold tracking-tight text-foreground sm:text-3xl">
@@ -106,6 +132,10 @@ export function SolicitorMattersPage() {
               <LayoutGrid className="size-4" />
             </button>
           </div>
+
+          <Button onClick={() => setCreateOpen(true)} size="sm" className="rounded-xl text-xs">
+            <Plus className="size-3.5 mr-1" /> New Matter
+          </Button>
 
           <Button onClick={resetFilters} variant="outline" size="sm" className="rounded-xl text-xs">
             <RotateCcw className="size-3.5 mr-1" /> Reset Filters
@@ -203,23 +233,23 @@ export function SolicitorMattersPage() {
               <SelectItem value="M. Iqbal">M. Iqbal</SelectItem>
             </SelectContent>
           </Select>
+        </div>
 
-          <div className="flex items-center gap-4 sm:col-span-2 pt-1">
-            <label className="flex items-center gap-2 text-xs cursor-pointer text-muted-foreground hover:text-foreground">
-              <Checkbox
-                checked={missingDocsOnly}
-                onCheckedChange={(c) => setMissingDocsOnly(!!c)}
-              />
-              Missing Docs Only
-            </label>
-            <label className="flex items-center gap-2 text-xs cursor-pointer text-muted-foreground hover:text-foreground">
-              <Checkbox
-                checked={urgentOnly}
-                onCheckedChange={(c) => setUrgentOnly(!!c)}
-              />
-              Urgent Action Only
-            </label>
-          </div>
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-xs cursor-pointer text-muted-foreground hover:text-foreground">
+            <Checkbox
+              checked={missingDocsOnly}
+              onCheckedChange={(c) => setMissingDocsOnly(!!c)}
+            />
+            Missing Docs Only
+          </label>
+          <label className="flex items-center gap-2 text-xs cursor-pointer text-muted-foreground hover:text-foreground">
+            <Checkbox
+              checked={urgentOnly}
+              onCheckedChange={(c) => setUrgentOnly(!!c)}
+            />
+            Urgent Action Only
+          </label>
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-border text-xs text-muted-foreground">
@@ -247,7 +277,23 @@ export function SolicitorMattersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((m) => (
+                {filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-14 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        {matters.length === 0
+                          ? "No matters in your caseload yet."
+                          : "No matters match the current filters."}
+                      </p>
+                      {matters.length === 0 && (
+                        <Button onClick={() => setCreateOpen(true)} size="sm" className="mt-4">
+                          <Plus className="size-3.5 mr-1" /> Open New Matter
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                filtered.map((m) => (
                   <TableRow key={m.id} className="group hover:bg-muted/50 transition-colors">
                     <TableCell className="py-3">
                       <div className="font-semibold text-sm text-foreground">{m.clientName}</div>
@@ -326,7 +372,8 @@ export function SolicitorMattersPage() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
+  Archive,
   CheckCircle2,
   Download,
   FileText,
   History,
   Info,
+  Loader2,
+  SendHorizonal,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
@@ -20,7 +23,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { INITIAL_MATTERS, Matter, DocumentItem } from "@/lib/solicitor-data";
+import { Matter, DocumentItem } from "@/lib/solicitor-data";
+import { getCurrentUser } from "@/lib/auth";
+import { markMatterMessagesReadRequest, useCloseMatter, useCreateMatterNote, useCreateMatterReferral, useCreateMatterTask, useMatterAudit, useRecordMatterDecision, useResolveMatterTask, useSendMatterMessage, useSolicitorMatter, useUpdateMatterReferralStatus, useVerifyMatterDocument, downloadSolicitorDocumentRequest, downloadSolicitorGeneratedDocumentRequest } from "@/lib/matters-api";
+import { ClosureModal, type ClosureOutcome } from "@/components/solicitor/ClosureModal";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useReferralPartners } from "@/lib/settings-api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { DecisionModal, DecisionType } from "@/components/solicitor/DecisionModals";
 import { DocumentPreviewModal } from "@/components/solicitor/DocumentPreviewModal";
 import { toast } from "sonner";
@@ -38,6 +48,7 @@ const REVIEW_TAB_VALUES = new Set([
   "advice",
   "referrals",
   "tasks",
+  "messages",
   "notes",
   "audit",
 ]);
@@ -50,16 +61,28 @@ export function MatterReviewPage({
   defaultTab?: string;
 } = {}) {
   const params = useParams({ strict: false });
-  const matterId = matterIdOverride || (params as any).matterId || "MAT-2026-4417";
+  const matterId = matterIdOverride || (params as any).matterId || "";
   const navigate = useNavigate();
   const initialTab = REVIEW_TAB_VALUES.has(defaultTab) ? defaultTab : "overview";
+  const solicitorName = getCurrentUser()?.name ?? "Solicitor";
 
-  const initialMatter = INITIAL_MATTERS.find((m) => m.id === matterId) || INITIAL_MATTERS[0];
-  const [matter, setMatter] = useState<Matter>(initialMatter);
+  const { data, isLoading, isError } = useSolicitorMatter(matterId);
+  const recordDecision = useRecordMatterDecision(matterId);
+  const closeMatter = useCloseMatter(matterId);
+  const createTask = useCreateMatterTask(matterId);
+  const resolveTask = useResolveMatterTask(matterId);
+  const createReferral = useCreateMatterReferral(matterId);
+  const updateReferralStatus = useUpdateMatterReferralStatus(matterId);
+  const createNote = useCreateMatterNote(matterId);
+  const sendMessage = useSendMatterMessage(matterId);
+  const verifyDocument = useVerifyMatterDocument(matterId);
+  const [matter, setMatter] = useState<Matter | null>(null);
   const [activeTab, setActiveTab] = useState(initialTab);
+  const { data: auditData, isLoading: auditLoading } = useMatterAudit(matterId, activeTab === "audit");
 
   const [decisionModalOpen, setDecisionModalOpen] = useState(false);
   const [activeDecision, setActiveDecision] = useState<DecisionType>(null);
+  const [closureModalOpen, setClosureModalOpen] = useState(false);
 
   const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
   const [docModalOpen, setDocModalOpen] = useState(false);
@@ -68,98 +91,209 @@ export function MatterReviewPage({
   const [isInternalNote, setIsInternalNote] = useState(true);
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [messageContent, setMessageContent] = useState("");
+  const { data: partnersData } = useReferralPartners();
+  const referralPartners = partnersData?.partners ?? [];
+  const [referralPartnerId, setReferralPartnerId] = useState(
+    referralPartners.find((p) => p.status === "active")?.id ?? "",
+  );
+  const [referralReason, setReferralReason] = useState("");
+  const [referralNotes, setReferralNotes] = useState("");
+
+  useEffect(() => {
+    if (referralPartnerId || referralPartners.length === 0) return;
+    const defaultPartner = referralPartners.find((partner) => partner.status === "active");
+    if (defaultPartner) {
+      setReferralPartnerId(defaultPartner.id);
+    }
+  }, [referralPartnerId, referralPartners]);
+
+  useEffect(() => {
+    if (activeTab !== "messages" || !matterId) return;
+    const unread = (matter?.messages ?? []).filter(
+      (message) => message.sender === "client" && !message.readBySolicitor,
+    ).length;
+    if (!unread) return;
+    void markMatterMessagesReadRequest(matterId).then(() => {
+      setMatter((prev) =>
+        prev
+          ? {
+              ...prev,
+              messages: prev.messages.map((message) =>
+                message.sender === "client" ? { ...message, readBySolicitor: true } : message,
+              ),
+            }
+          : prev,
+      );
+    });
+  }, [activeTab, matter?.messages, matterId]);
 
   useEffect(() => {
     setActiveTab(REVIEW_TAB_VALUES.has(defaultTab) ? defaultTab : "overview");
   }, [defaultTab]);
 
   useEffect(() => {
-    const next = INITIAL_MATTERS.find((m) => m.id === matterId) || INITIAL_MATTERS[0];
-    setMatter(next);
-  }, [matterId]);
+    if (data?.matter) {
+      setMatter(data.matter);
+    }
+  }, [data?.matter]);
 
   const handleDecisionConfirm = (
     action: "approve" | "amend" | "reject" | "override",
     payload: { notes: string; amendedSolution?: string }
   ) => {
-    const updatedStatus =
-      action === "approve"
-        ? "approved"
-        : action === "amend"
-        ? "amended"
-        : action === "reject"
-        ? "rejected"
-        : "overridden";
-
-    const newAuditRecord = {
-      id: `AUD-${Date.now()}`,
-      user: "Rachel Okonkwo",
-      role: "Solicitor",
-      timestamp: new Date().toISOString().replace("T", " ").substring(0, 16),
-      section: "Solicitor Decision",
-      previousValue: matter.status,
-      newValue: updatedStatus,
-      reason: payload.notes,
-    };
-
-    setMatter((prev) => ({
-      ...prev,
-      status: updatedStatus as any,
-      solicitorDecision: {
+    recordDecision.mutate(
+      {
         action,
-        solicitorName: "Rachel Okonkwo",
-        decidedAt: new Date().toISOString().replace("T", " ").substring(0, 16),
         notes: payload.notes,
         amendedSolution: payload.amendedSolution,
+        solicitorName,
       },
-      auditHistory: [newAuditRecord, ...prev.auditHistory],
-      notes: [
-        {
-          id: `N-${Date.now()}`,
-          author: "Rachel Okonkwo",
-          role: "Solicitor",
-          date: new Date().toISOString().replace("T", " ").substring(0, 16),
-          content: `Solicitor Action [${action.toUpperCase()}]: ${payload.notes}`,
-          isInternal: true,
+      {
+        onSuccess: (result) => {
+          setMatter(result.matter);
+          setDecisionModalOpen(false);
+          setActiveDecision(null);
+          const labels: Record<string, string> = {
+            approve: "Advice approved and issued to client",
+            amend: "Recommendation amended and advice issued",
+            reject: "Returned to client for clarification",
+            override: "Manual override recorded and advice issued",
+          };
+          toast.success(labels[action] ?? "Decision recorded.");
         },
-        ...prev.notes,
-      ],
-    }));
+        onError: () => {
+          toast.error("Could not save decision. Please try again.");
+        },
+      },
+    );
+  };
+
+  const handleClosureConfirm = (payload: { reason: string; outcome: ClosureOutcome; retentionYears?: number }) => {
+    closeMatter.mutate(
+      {
+        reason: payload.reason,
+        outcome: payload.outcome,
+        solicitorName,
+        retentionYears: payload.retentionYears,
+      },
+      {
+        onSuccess: (result) => {
+          setMatter(result.matter);
+          setClosureModalOpen(false);
+          toast.success("Matter closed and closing letter issued to client.");
+        },
+        onError: (error) => {
+          const message = error instanceof Error ? error.message : "Could not close matter.";
+          toast.error(message);
+        },
+      },
+    );
+  };
+
+  const decisionRecorded = Boolean(matter?.solicitorDecision);
+  const matterClosed = matter?.status === "completed";
+  const openReferrals = (matter?.referrals ?? []).some((referral) =>
+    ["initiated", "accepted", "in_progress"].includes(referral.status),
+  );
+  const openClientTasks = (matter?.tasks ?? []).some((task) => task.status === "sent_to_client");
+  const canCloseMatter = Boolean(matter) && !matterClosed && !openReferrals && !openClientTasks;
+  const issuedSolution =
+    matter?.solicitorDecision?.amendedSolution &&
+    (matter.solicitorDecision.action === "amend" || matter.solicitorDecision.action === "override")
+      ? matter.solicitorDecision.amendedSolution
+      : matter?.aiRecommendedSolution;
+
+  useEffect(() => {
+    if (matter && !referralReason) {
+      setReferralReason(`${matter.aiRecommendedSolution} specialist handoff required`);
+    }
+  }, [matter, referralReason]);
+
+  const handleCreateReferral = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!referralPartnerId || !referralReason.trim()) return;
+    const partner = referralPartners.find((item) => item.id === referralPartnerId);
+    createReferral.mutate(
+      {
+        partnerId: referralPartnerId,
+        reason: referralReason.trim(),
+        contactPerson: partner?.contactName,
+        notes: referralNotes.trim() || undefined,
+        solicitorName,
+      },
+      {
+        onSuccess: (result) => {
+          setMatter(result.matter);
+          setReferralNotes("");
+          toast.success("Referral created and client notified.");
+        },
+        onError: () => toast.error("Could not create referral."),
+      },
+    );
   };
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNoteContent.trim()) return;
-    const note = {
-      id: `N-${Date.now()}`,
-      author: "Rachel Okonkwo",
-      role: "Solicitor",
-      date: new Date().toISOString().replace("T", " ").substring(0, 16),
-      content: newNoteContent,
-      isInternal: isInternalNote,
-    };
-    setMatter((prev) => ({ ...prev, notes: [note, ...prev.notes] }));
-    setNewNoteContent("");
-    toast.success("Note added to case file.");
+    createNote.mutate(
+      {
+        content: newNoteContent.trim(),
+        isInternal: isInternalNote,
+        solicitorName,
+      },
+      {
+        onSuccess: (result) => {
+          setMatter(result.matter);
+          setNewNoteContent("");
+          toast.success("Note added to case file.");
+        },
+        onError: () => toast.error("Could not save note."),
+      },
+    );
   };
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
-    const task = {
-      id: `T-${Date.now()}`,
-      title: newTaskTitle,
-      assignee: matter.clientName,
-      type: "client_clarification" as const,
-      dueDate: "2026-08-15",
-      priority: "high" as const,
-      status: "sent_to_client" as const,
-      description: "Solicitor requested additional detail.",
-    };
-    setMatter((prev) => ({ ...prev, tasks: [task, ...prev.tasks] }));
-    setNewTaskTitle("");
-    toast.success("Task sent to client.");
+    createTask.mutate(
+      {
+        title: newTaskTitle.trim(),
+        description: "Solicitor requested additional detail from the client.",
+        type: "client_clarification",
+        priority: "high",
+        solicitorName,
+      },
+      {
+        onSuccess: (result) => {
+          setMatter(result.matter);
+          setNewTaskTitle("");
+          toast.success("Task sent to client.");
+        },
+        onError: () => toast.error("Could not create task."),
+      },
+    );
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="size-8 animate-spin" />
+        <p className="text-sm">Loading matter details…</p>
+      </div>
+    );
+  }
+
+  if (isError || !matter) {
+    return (
+      <div className="space-y-4 py-12 text-center">
+        <p className="text-sm text-muted-foreground">This matter could not be loaded.</p>
+        <Link to="/solicitor/matters">
+          <Button variant="outline" size="sm">Back to All Matters</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-16">
@@ -169,17 +303,43 @@ export function MatterReviewPage({
         open={decisionModalOpen}
         onClose={() => setDecisionModalOpen(false)}
         onConfirm={handleDecisionConfirm}
+        isPending={recordDecision.isPending}
+      />
+
+      <ClosureModal
+        matter={matter}
+        open={closureModalOpen}
+        onClose={() => setClosureModalOpen(false)}
+        onConfirm={handleClosureConfirm}
+        isPending={closeMatter.isPending}
       />
 
       <DocumentPreviewModal
         doc={selectedDoc}
+        matterId={matterId}
         open={docModalOpen}
+        verifying={verifyDocument.isPending}
         onClose={() => setDocModalOpen(false)}
+        onDownload={
+          selectedDoc
+            ? () =>
+                downloadSolicitorDocumentRequest(matterId, selectedDoc.id, selectedDoc.name).catch(() =>
+                  toast.error("Could not download document."),
+                )
+            : undefined
+        }
         onStatusChange={(docId, status) => {
-          setMatter((prev) => ({
-            ...prev,
-            documents: prev.documents.map((d) => (d.id === docId ? { ...d, verificationStatus: status } : d)),
-          }));
+          verifyDocument.mutate(
+            { documentId: docId, status },
+            {
+              onSuccess: (result) => {
+                setMatter(result.matter);
+                toast.success(status === "verified" ? "Document verified" : "Document flagged");
+                setDocModalOpen(false);
+              },
+              onError: () => toast.error("Could not update document status."),
+            },
+          );
         }}
       />
 
@@ -190,7 +350,7 @@ export function MatterReviewPage({
         <span className="text-xs text-muted-foreground">Assigned Solicitor: <strong>{matter.assignedSolicitor}</strong></span>
       </div>
 
-      <div className="sticky top-16 z-20 rounded-2xl border border-border bg-card/95 p-5 shadow-soft backdrop-blur-xl space-y-4">
+      <div className="sticky top-16 z-20 isolate rounded-2xl border border-border bg-card p-5 shadow-soft space-y-4">
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-stretch">
           {/* Matter summary */}
           <div className="min-w-0 space-y-4">
@@ -264,6 +424,7 @@ export function MatterReviewPage({
               <Button
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs"
+                disabled={decisionRecorded || recordDecision.isPending}
                 onClick={() => {
                   setActiveDecision("approve");
                   setDecisionModalOpen(true);
@@ -275,6 +436,7 @@ export function MatterReviewPage({
                 size="sm"
                 variant="outline"
                 className="text-xs border-amber-500/50 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10"
+                disabled={decisionRecorded || recordDecision.isPending}
                 onClick={() => {
                   setActiveDecision("amend");
                   setDecisionModalOpen(true);
@@ -286,6 +448,7 @@ export function MatterReviewPage({
                 size="sm"
                 variant="outline"
                 className="text-xs border-rose-500/50 text-rose-600 hover:bg-rose-500/10"
+                disabled={decisionRecorded || recordDecision.isPending}
                 onClick={() => {
                   setActiveDecision("reject");
                   setDecisionModalOpen(true);
@@ -297,6 +460,7 @@ export function MatterReviewPage({
                 size="sm"
                 variant="ghost"
                 className="text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 border border-transparent"
+                disabled={decisionRecorded || recordDecision.isPending}
                 onClick={() => {
                   setActiveDecision("override");
                   setDecisionModalOpen(true);
@@ -315,9 +479,61 @@ export function MatterReviewPage({
             issued to the client.
           </span>
         </div>
+
+        {decisionRecorded && matter.solicitorDecision && (
+          <div className="flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-950 dark:text-emerald-200">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <div>
+              <strong className="block capitalize">
+                Decision recorded: {matter.solicitorDecision.action}
+              </strong>
+              <span className="text-muted-foreground">
+                {matter.solicitorDecision.solicitorName} · {matter.solicitorDecision.decidedAt}
+              </span>
+              <p className="mt-1">{matter.solicitorDecision.notes}</p>
+            </div>
+          </div>
+        )}
+
+        {matterClosed && matter.matterClosure && (
+          <div className="flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs">
+            <Archive className="mt-0.5 size-4 shrink-0 text-primary" />
+            <div>
+              <strong className="block capitalize">Matter closed: {matter.matterClosure.outcome.replace(/_/g, " ")}</strong>
+              <span className="text-muted-foreground">
+                {matter.matterClosure.closedBy} · {matter.matterClosure.closedAt}
+              </span>
+              <p className="mt-1">{matter.matterClosure.reason}</p>
+              <p className="mt-1 text-muted-foreground">
+                File retained for {matter.matterClosure.retentionYears} years. Closing letter available in Advice Docs.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!matterClosed && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3">
+            <div className="text-xs text-muted-foreground">
+              {openReferrals
+                ? "Complete or decline open referrals before closing."
+                : openClientTasks
+                  ? "Resolve outstanding client tasks before closing."
+                  : "When advice or referral work is finished, close the matter to issue the closing letter."}
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!canCloseMatter || closeMatter.isPending}
+              onClick={() => setClosureModalOpen(true)}
+            >
+              {closeMatter.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Archive className="size-3.5 mr-1" />}
+              Close matter
+            </Button>
+          </div>
+        )}
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="relative z-0 w-full">
         <TabsList className="flex w-full overflow-x-auto justify-start h-11 p-1 bg-muted/60 rounded-xl mb-6">
           <TabsTrigger value="overview" className="text-xs font-semibold">Overview</TabsTrigger>
           <TabsTrigger value="client" className="text-xs">Client Info</TabsTrigger>
@@ -331,6 +547,9 @@ export function MatterReviewPage({
           <TabsTrigger value="advice" className="text-xs">Advice Docs</TabsTrigger>
           <TabsTrigger value="referrals" className="text-xs">Referrals</TabsTrigger>
           <TabsTrigger value="tasks" className="text-xs">Tasks ({matter.tasks.length})</TabsTrigger>
+          <TabsTrigger value="messages" className="text-xs">
+            Messages ({matter.messages?.length ?? 0})
+          </TabsTrigger>
           <TabsTrigger value="notes" className="text-xs">Notes ({matter.notes.length})</TabsTrigger>
           <TabsTrigger value="audit" className="text-xs">Audit History</TabsTrigger>
         </TabsList>
@@ -732,15 +951,40 @@ export function MatterReviewPage({
           <Card className="surface-card">
             <CardHeader><CardTitle className="text-base font-display">Generated Legal Advice Package</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-xs">
-              <div className="p-3 rounded-xl border border-border flex items-center justify-between">
-                <div>
-                  <span className="font-semibold text-foreground block">Formal Advice Letter — {matter.aiRecommendedSolution}</span>
-                  <span className="text-muted-foreground text-[0.68rem]">Drafted on {matter.updatedAt}</span>
+              {(matter.adviceDocuments ?? []).length === 0 ? (
+                <div className="p-3 rounded-xl border border-border">
+                  <span className="font-semibold text-foreground block">
+                    Formal Advice Letter — {issuedSolution}
+                  </span>
+                  <span className="text-muted-foreground text-[0.68rem]">
+                    {decisionRecorded ? "Draft pending issue" : `Draft prepared · ${matter.updatedAt}`}
+                  </span>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => toast.success("Draft advice letter downloaded.")}>
-                  <Download className="size-3.5 mr-1" /> Download PDF
-                </Button>
-              </div>
+              ) : (
+                (matter.adviceDocuments ?? []).map((doc) => (
+                  <div key={doc.id} className="p-3 rounded-xl border border-border flex items-center justify-between">
+                    <div>
+                      <span className="font-semibold text-foreground block">{doc.title}</span>
+                      <span className="text-muted-foreground text-[0.68rem]">
+                        {doc.status === "issued" ? `Issued ${doc.issuedAt}` : `Status: ${doc.status}`}
+                      </span>
+                      <p className="mt-1 text-muted-foreground">{doc.summary}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={doc.status !== "issued"}
+                      onClick={() =>
+                        void downloadSolicitorGeneratedDocumentRequest(matterId, doc.id, doc.downloadName).catch(
+                          () => toast.error("Could not download document."),
+                        )
+                      }
+                    >
+                      <Download className="size-3.5 mr-1" /> Download PDF
+                    </Button>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -748,18 +992,94 @@ export function MatterReviewPage({
         <TabsContent value="referrals">
           <Card className="surface-card">
             <CardHeader><CardTitle className="text-base font-display">Third-Party Referrals</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-xs">
+            <CardContent className="space-y-4 text-xs">
+              <form onSubmit={handleCreateReferral} className="rounded-xl border border-border p-4 space-y-3">
+                <p className="font-semibold text-foreground">Create referral</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="referralPartner" className="text-[0.68rem]">Partner</Label>
+                    <Select value={referralPartnerId} onValueChange={setReferralPartnerId}>
+                      <SelectTrigger id="referralPartner">
+                        <SelectValue placeholder="Select partner" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {referralPartners.filter((partner) => partner.status === "active").map((partner) => (
+                          <SelectItem key={partner.id} value={partner.id}>{partner.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="referralReason" className="text-[0.68rem]">Reason</Label>
+                    <Input
+                      id="referralReason"
+                      value={referralReason}
+                      onChange={(e) => setReferralReason(e.target.value)}
+                      className="h-9"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="referralNotes" className="text-[0.68rem]">Internal notes</Label>
+                  <Textarea
+                    id="referralNotes"
+                    value={referralNotes}
+                    onChange={(e) => setReferralNotes(e.target.value)}
+                    className="min-h-[70px]"
+                    placeholder="Handoff notes for the partner and audit trail..."
+                  />
+                </div>
+                <Button type="submit" size="sm" disabled={createReferral.isPending}>
+                  {createReferral.isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                  Create referral
+                </Button>
+              </form>
+
               {matter.referrals.length === 0 ? (
                 <p className="text-muted-foreground">No active third-party referrals for this matter.</p>
               ) : (
                 matter.referrals.map((r) => (
-                  <div key={r.id} className="p-3 rounded-xl border border-border bg-card space-y-1">
-                    <div className="flex items-center justify-between font-semibold">
+                  <div key={r.id} className="p-3 rounded-xl border border-border bg-card space-y-2">
+                    <div className="flex items-center justify-between font-semibold gap-3">
                       <span>{r.partner}</span>
-                      <Badge variant="secondary" className="capitalize">{r.status}</Badge>
+                      <Badge variant="secondary" className="capitalize">{r.status.replace(/_/g, " ")}</Badge>
                     </div>
                     <p className="text-muted-foreground">Reason: {r.reason}</p>
                     <p className="text-primary font-medium">Notes: {r.notes}</p>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <Select
+                        value={r.status}
+                        onValueChange={(status) =>
+                          updateReferralStatus.mutate(
+                            {
+                              referralId: r.id,
+                              status: status as typeof r.status,
+                              solicitorName,
+                            },
+                            {
+                              onSuccess: (result) => {
+                                setMatter(result.matter);
+                                toast.success("Referral status updated.");
+                              },
+                              onError: () => toast.error("Could not update referral."),
+                            },
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-[180px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="initiated">Initiated</SelectItem>
+                          <SelectItem value="accepted">Accepted</SelectItem>
+                          <SelectItem value="in_progress">In progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="declined">Declined</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="text-[0.65rem] text-muted-foreground">Referred {r.date}</span>
+                    </div>
                   </div>
                 ))
               )}
@@ -781,20 +1101,117 @@ export function MatterReviewPage({
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   placeholder="Request client clarification or upload..."
                   className="text-xs h-9"
+                  disabled={createTask.isPending}
                 />
-                <Button type="submit" size="sm" className="text-xs">Request Info</Button>
+                <Button type="submit" size="sm" className="text-xs" disabled={createTask.isPending}>
+                  {createTask.isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                  Request Info
+                </Button>
               </form>
               <div className="space-y-2 text-xs">
                 {matter.tasks.map((t) => (
-                  <div key={t.id} className="p-3 rounded-xl border border-border bg-card flex items-center justify-between">
+                  <div key={t.id} className="p-3 rounded-xl border border-border bg-card flex items-center justify-between gap-3">
                     <div>
                       <span className="font-semibold text-foreground block">{t.title}</span>
                       <span className="text-muted-foreground">{t.description}</span>
+                      <span className="mt-1 block text-[0.65rem] text-muted-foreground">
+                        Due {t.dueDate} · {t.priority} priority
+                      </span>
                     </div>
-                    <Badge variant="outline" className="capitalize">{t.status.replace(/_/g, " ")}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="capitalize">{t.status.replace(/_/g, " ")}</Badge>
+                      {t.status === "client_completed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                          disabled={resolveTask.isPending}
+                          onClick={() =>
+                            resolveTask.mutate(
+                              { taskId: t.id, solicitorName },
+                              {
+                                onSuccess: (result) => {
+                                  setMatter(result.matter);
+                                  toast.success("Task resolved.");
+                                },
+                                onError: () => toast.error("Could not resolve task."),
+                              },
+                            )
+                          }
+                        >
+                          Resolve
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="messages">
+          <Card className="surface-card">
+            <CardHeader>
+              <CardTitle className="text-base font-display">Secure client messaging</CardTitle>
+              <CardDescription className="text-xs">
+                Encrypted correspondence with {matter.clientName}. Internal case notes remain in the Notes tab.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="max-h-[420px] space-y-3 overflow-y-auto rounded-xl border border-border bg-muted/20 p-4">
+                {(matter.messages ?? []).length === 0 ? (
+                  <p className="text-center text-sm text-muted-foreground">No messages yet.</p>
+                ) : (
+                  (matter.messages ?? []).map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.sender === "solicitor" ? "justify-end" : ""}`}
+                    >
+                      <div
+                        className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                          message.sender === "solicitor"
+                            ? "rounded-tr-sm bg-primary text-primary-foreground"
+                            : "rounded-tl-sm bg-card text-foreground border border-border"
+                        }`}
+                      >
+                        <p className="mb-1 text-[0.65rem] font-semibold opacity-80">
+                          {message.author} · {message.role}
+                        </p>
+                        {message.content}
+                        <p className="mt-1.5 text-[0.65rem] opacity-70">{message.sentAt}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!messageContent.trim()) return;
+                  sendMessage.mutate(messageContent.trim(), {
+                    onSuccess: (result) => {
+                      setMatter((prev) =>
+                        prev ? { ...prev, messages: [...(prev.messages ?? []), result.message] } : prev,
+                      );
+                      setMessageContent("");
+                      toast.success("Message sent to client.");
+                    },
+                    onError: () => toast.error("Could not send message."),
+                  });
+                }}
+                className="flex items-end gap-2"
+              >
+                <Textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  placeholder="Write a secure message to the client..."
+                  className="min-h-[80px] text-xs"
+                />
+                <Button type="submit" size="icon" disabled={sendMessage.isPending || !messageContent.trim()}>
+                  <SendHorizonal className="size-4" />
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
@@ -809,19 +1226,43 @@ export function MatterReviewPage({
                   onChange={(e) => setNewNoteContent(e.target.value)}
                   placeholder="Add confidential legal case note..."
                   className="text-xs min-h-[70px]"
+                  disabled={createNote.isPending}
                 />
-                <Button type="submit" size="sm" className="text-xs">Add Case Note</Button>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="internalNote"
+                    checked={isInternalNote}
+                    onCheckedChange={(checked) => setIsInternalNote(!!checked)}
+                    disabled={createNote.isPending}
+                  />
+                  <Label htmlFor="internalNote" className="text-xs font-normal cursor-pointer">
+                    Internal note (not visible to client)
+                  </Label>
+                </div>
+                <Button type="submit" size="sm" className="text-xs" disabled={createNote.isPending || !newNoteContent.trim()}>
+                  {createNote.isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                  Add Case Note
+                </Button>
               </form>
               <div className="space-y-2 text-xs">
-                {matter.notes.map((n) => (
-                  <div key={n.id} className="p-3 rounded-xl border border-border bg-muted/40 space-y-1">
-                    <div className="flex items-center justify-between text-muted-foreground">
-                      <span className="font-semibold text-foreground">{n.author} ({n.role})</span>
-                      <span>{n.date}</span>
+                {matter.notes.length === 0 ? (
+                  <p className="text-muted-foreground">No case notes yet.</p>
+                ) : (
+                  matter.notes.map((n) => (
+                    <div key={n.id} className="p-3 rounded-xl border border-border bg-muted/40 space-y-1">
+                      <div className="flex items-center justify-between text-muted-foreground gap-2">
+                        <span className="font-semibold text-foreground">
+                          {n.author} ({n.role})
+                          {n.isInternal && (
+                            <Badge variant="outline" className="ml-2 text-[0.62rem]">Internal</Badge>
+                          )}
+                        </span>
+                        <span>{n.date}</span>
+                      </div>
+                      <p className="text-foreground leading-relaxed">{n.content}</p>
                     </div>
-                    <p className="text-foreground leading-relaxed">{n.content}</p>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -848,16 +1289,30 @@ export function MatterReviewPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {matter.auditHistory.map((a) => (
-                    <TableRow key={a.id} className="text-xs">
-                      <TableCell className="font-mono text-muted-foreground">{a.timestamp}</TableCell>
-                      <TableCell className="font-semibold">{a.user} ({a.role})</TableCell>
-                      <TableCell>{a.section}</TableCell>
-                      <TableCell className="text-muted-foreground">{a.previousValue}</TableCell>
-                      <TableCell className="font-semibold text-primary">{a.newValue}</TableCell>
-                      <TableCell className="text-muted-foreground max-w-[200px] truncate">{a.reason}</TableCell>
+                  {auditLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                        <Loader2 className="mx-auto size-5 animate-spin" />
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (auditData?.entries ?? matter.auditHistory).length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                        No audit records for this matter yet.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    (auditData?.entries ?? matter.auditHistory).map((a) => (
+                      <TableRow key={a.id} className="text-xs">
+                        <TableCell className="font-mono text-muted-foreground">{a.timestamp}</TableCell>
+                        <TableCell className="font-semibold">{a.user} ({a.role})</TableCell>
+                        <TableCell>{a.section}</TableCell>
+                        <TableCell className="text-muted-foreground">{a.previousValue}</TableCell>
+                        <TableCell className="font-semibold text-primary">{a.newValue}</TableCell>
+                        <TableCell className="text-muted-foreground max-w-[200px] truncate">{a.reason}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

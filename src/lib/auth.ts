@@ -1,4 +1,5 @@
 import { getClientLandingPath } from "@/lib/assessment-guard";
+import { logoutRequest } from "@/lib/auth-api";
 
 export type UserRole = "client" | "solicitor";
 
@@ -9,6 +10,7 @@ export interface UserProfile {
   role: UserRole;
   avatar: string;
   title: string;
+  phone?: string;
   reference?: string;
   sraNumber?: string;
 }
@@ -34,28 +36,73 @@ export const DEMO_USERS: Record<UserRole, UserProfile> = {
   },
 };
 
-/** Hardcoded solicitor demo credentials. Any other email/password signs in as client. */
+/** Seeded solicitor demo credentials. */
 export const SOLICITOR_DEMO_CREDENTIALS = {
   email: "solicitor@gmail.com",
-  password: "123456",
+  password: "11223344",
 } as const;
 
-export function resolveLoginRole(email: string, password: string): UserRole {
-  const normalizedEmail = email.trim().toLowerCase();
-  if (
-    normalizedEmail === SOLICITOR_DEMO_CREDENTIALS.email &&
-    password === SOLICITOR_DEMO_CREDENTIALS.password
-  ) {
-    return "solicitor";
+/** Seeded customer demo credentials. */
+export const CLIENT_DEMO_CREDENTIALS = {
+  email: "amelia.hartley@example.co.uk",
+  password: "11223344",
+} as const;
+
+const ROLE_KEY = "fg_debt_user_role";
+const TOKEN_KEY = "fg_debt_token";
+const USER_KEY = "fg_debt_user";
+
+function notifyAuthChange() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("auth-role-change"));
   }
-  return "client";
 }
 
-const STORAGE_KEY = "fg_debt_user_role";
+function readStoredUser(): UserProfile | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(USER_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as UserProfile;
+    if (parsed?.role === "solicitor" || parsed?.role === "client") {
+      return parsed;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function isAuthenticated(): boolean {
+  return Boolean(getAuthToken());
+}
+
+export function setSession(user: UserProfile, token: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  localStorage.setItem(ROLE_KEY, user.role);
+  notifyAuthChange();
+}
+
+export function clearSession(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(ROLE_KEY);
+  notifyAuthChange();
+}
 
 export function getCurrentRole(): UserRole {
   if (typeof window === "undefined") return "client";
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const storedUser = readStoredUser();
+  if (storedUser) return storedUser.role;
+  const stored = localStorage.getItem(ROLE_KEY);
   if (stored === "solicitor" || stored === "client") {
     return stored;
   }
@@ -63,24 +110,34 @@ export function getCurrentRole(): UserRole {
 }
 
 export function setCurrentRole(role: UserRole): void {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, role);
-    window.dispatchEvent(new Event("auth-role-change"));
+  if (typeof window === "undefined") return;
+  localStorage.setItem(ROLE_KEY, role);
+  const storedUser = readStoredUser();
+  if (!storedUser || storedUser.role !== role) {
+    localStorage.setItem(USER_KEY, JSON.stringify(DEMO_USERS[role]));
   }
+  notifyAuthChange();
 }
 
 export function getCurrentUser(): UserProfile {
-  const role = getCurrentRole();
-  return DEMO_USERS[role];
+  return readStoredUser() ?? DEMO_USERS[getCurrentRole()];
 }
 
 export function roleHomePath(role: UserRole): string {
   if (role === "solicitor") return "/solicitor";
-  // Clients never land on the dashboard until assessment submission.
   return getClientLandingPath();
 }
 
 export function roleDisplayLabel(role: UserRole): string {
   if (role === "solicitor") return "Solicitor Dashboard";
   return "Client Portal";
+}
+
+export async function signOut(): Promise<void> {
+  try {
+    await logoutRequest();
+  } catch {
+    // Sign-out should still clear the local session if the API is unreachable.
+  }
+  clearSession();
 }

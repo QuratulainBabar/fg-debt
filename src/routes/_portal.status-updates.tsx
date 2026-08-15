@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Activity, Bell } from "lucide-react";
+import { Activity, Bell, History } from "lucide-react";
 import { PageHeader } from "@/components/portal/PageHeader";
 import { Button } from "@/components/ui/button";
-import { activity, notifications } from "@/lib/mock-data";
+import { useClientPortal } from "@/lib/client-portal-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
+import { useClientAudit } from "@/lib/client-audit-api";
 
 export const Route = createFileRoute("/_portal/status-updates")({
   head: () => ({
@@ -23,6 +25,15 @@ export const Route = createFileRoute("/_portal/status-updates")({
 });
 
 function StatusUpdatesPage() {
+  const { data, isLoading, isError } = useClientPortal();
+  const auditQuery = useClientAudit();
+
+  if (isLoading || auditQuery.isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+
+  const portal = data.portal;
+  const auditEntries = auditQuery.data?.entries ?? portal.auditTrail;
+
   return (
     <>
       <PageHeader
@@ -50,16 +61,46 @@ function StatusUpdatesPage() {
             </div>
           </div>
           <ul className="space-y-4">
-            {activity.map((a) => (
-              <li key={a.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
-                <p className="text-sm font-medium">{a.text}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{a.time}</p>
-              </li>
-            ))}
+            {portal.activity.length === 0 ? (
+              <li className="text-sm text-muted-foreground">No recent activity yet.</li>
+            ) : (
+              portal.activity.map((a) => (
+                <li key={a.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                  <p className="text-sm font-medium">{a.text}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{a.time}</p>
+                </li>
+              ))
+            )}
           </ul>
         </section>
 
         <section className="surface-card p-6">
+          <div className="mb-5 flex items-center gap-3">
+            <span className="grid size-10 place-items-center rounded-xl bg-secondary/50 text-primary">
+              <History className="size-5" />
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold">Case audit trail</h2>
+              <p className="text-sm text-muted-foreground">Key updates on your matter</p>
+            </div>
+          </div>
+          <ul className="space-y-4">
+            {auditEntries.length === 0 ? (
+              <li className="text-sm text-muted-foreground">No audit entries yet.</li>
+            ) : (
+              auditEntries.slice(0, 10).map((entry) => (
+                <li key={entry.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                  <p className="text-sm font-semibold">{entry.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{entry.detail}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{entry.timestamp}</p>
+                </li>
+              ))
+            )}
+          </ul>
+        </section>
+      </div>
+
+      <section className="mt-6 surface-card p-6">
           <div className="mb-5 flex items-center gap-3">
             <span className="grid size-10 place-items-center rounded-xl bg-secondary/50 text-primary">
               <Bell className="size-5" />
@@ -70,7 +111,7 @@ function StatusUpdatesPage() {
             </div>
           </div>
           <ul className="space-y-4">
-            {notifications.map((n) => (
+            {portal.notifications.map((n) => (
               <li key={n.id} className="rounded-xl border border-border p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -88,7 +129,6 @@ function StatusUpdatesPage() {
             ))}
           </ul>
         </section>
-      </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
         <Button asChild variant="outline">

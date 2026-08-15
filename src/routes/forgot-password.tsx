@@ -5,6 +5,9 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ApiError } from "@/lib/api";
+import { forgotPasswordRequest } from "@/lib/auth-api";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
@@ -22,8 +25,9 @@ function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [resetHref, setResetHref] = useState("/reset-password");
 
-  const submit = (e: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const email = String(new FormData(e.currentTarget).get("email") ?? "").trim();
     if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -32,10 +36,21 @@ function ForgotPasswordPage() {
     }
     setError("");
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const result = await forgotPasswordRequest(email);
+      if (result.resetUrl) {
+        const parsed = new URL(result.resetUrl, window.location.origin);
+        setResetHref(`${parsed.pathname}${parsed.search}`);
+      } else if (result.token) {
+        setResetHref(`/reset-password?token=${encodeURIComponent(result.token)}`);
+      }
       setSent(true);
-    }, 900);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "Unable to send a reset link.";
+      toast.error("Request failed", { description: message });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -58,7 +73,7 @@ function ForgotPasswordPage() {
             If an account exists for that address, a reset link is on its way.
           </p>
           <Button asChild variant="outline" className="mt-5 w-full">
-            <Link to="/reset-password">Open reset link (demo)</Link>
+            <a href={resetHref}>Open reset link (demo)</a>
           </Button>
         </div>
       ) : (

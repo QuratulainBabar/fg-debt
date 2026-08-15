@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileQuestion, Upload } from "lucide-react";
 import { PageHeader } from "@/components/portal/PageHeader";
+import { StatusBadge } from "@/components/portal/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { useDocumentHelp } from "@/lib/client-document-help-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
 
 export const Route = createFileRoute("/_portal/document-help")({
   head: () => ({
@@ -21,26 +24,24 @@ export const Route = createFileRoute("/_portal/document-help")({
   component: DocumentHelpPage,
 });
 
-const guides = [
-  {
-    title: "Bank statements",
-    body: "Upload the last 1–3 months showing income and regular outgoings. PDF scans are preferred over photos.",
-  },
-  {
-    title: "Payslips & benefits",
-    body: "Recent payslips or Universal Credit / benefit award letters verify income for affordability.",
-  },
-  {
-    title: "Creditor letters",
-    body: "Statements, arrears notices and default letters help confirm balances and account references.",
-  },
-  {
-    title: "ID & address",
-    body: "Passport or driving licence plus a recent council tax or utility bill complete identity checks.",
-  },
-];
+function statusLabel(status: string): string {
+  switch (status) {
+    case "complete":
+      return "Complete";
+    case "partial":
+      return "In progress";
+    case "optional":
+      return "Optional";
+    default:
+      return "Required";
+  }
+}
 
 function DocumentHelpPage() {
+  const { data, isLoading, isError } = useDocumentHelp();
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+
   return (
     <>
       <PageHeader
@@ -56,16 +57,51 @@ function DocumentHelpPage() {
         }
       />
 
+      {!data.matterId && (
+        <section className="surface-card mb-6 border-warning/40 bg-warning/8 p-5 text-sm text-muted-foreground">
+          Submit your debt assessment first so we can track which documents your case still needs.
+        </section>
+      )}
+
+      {data.flaggedDocuments.length > 0 && (
+        <section className="surface-card mb-6 border-warning/40 bg-warning/8 p-5">
+          <h2 className="text-sm font-semibold text-warning">Documents needing attention</h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            {data.flaggedDocuments.map((doc) => (
+              <li key={doc.name}>
+                <span className="font-medium">{doc.name}</span>
+                <span className="text-muted-foreground"> — {doc.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
-        {guides.map((g) => (
-          <section key={g.title} className="surface-card p-5">
+        {data.guides.map((guide) => (
+          <section key={`${guide.category}-${guide.title}`} className="surface-card p-5">
             <div className="flex items-start gap-3">
               <span className="grid size-9 place-items-center rounded-lg bg-secondary/50 text-primary">
                 <FileQuestion className="size-4" />
               </span>
-              <div>
-                <h2 className="text-base font-semibold">{g.title}</h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{g.body}</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-base font-semibold">{guide.title}</h2>
+                  <StatusBadge status={statusLabel(guide.status)} />
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{guide.body}</p>
+                {guide.required > 0 && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {guide.uploaded} of {guide.required} uploaded
+                  </p>
+                )}
+                {guide.tips.length > 0 && (
+                  <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+                    {guide.tips.map((tip) => (
+                      <li key={tip}>· {tip}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           </section>

@@ -3,14 +3,9 @@ import { ArrowRight, PiggyBank, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/portal/PageHeader";
 import { StatCard } from "@/components/portal/StatCard";
 import { Button } from "@/components/ui/button";
-import {
-  disposableIncome,
-  expenseItems,
-  gbp,
-  incomeItems,
-  totalExpenses,
-  totalIncome,
-} from "@/lib/mock-data";
+import { gbp } from "@/lib/format";
+import { useClientPortal } from "@/lib/client-portal-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
 
 export const Route = createFileRoute("/_portal/financial-information")({
   head: () => ({
@@ -31,6 +26,12 @@ export const Route = createFileRoute("/_portal/financial-information")({
 });
 
 function FinancialInformationPage() {
+  const { data, isLoading, isError } = useClientPortal();
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+
+  const portal = data.portal;
+
   return (
     <>
       <PageHeader
@@ -47,12 +48,12 @@ function FinancialInformationPage() {
       />
 
       <div className="grid gap-5 sm:grid-cols-3">
-        <StatCard icon={Wallet} label="Monthly income" value={gbp(totalIncome)} hint="Net household" />
-        <StatCard icon={PiggyBank} label="Essential spending" value={gbp(totalExpenses)} hint="CFS categories" />
+        <StatCard icon={Wallet} label="Monthly income" value={gbp(portal.totalIncome)} hint="Net household" />
+        <StatCard icon={PiggyBank} label="Essential spending" value={gbp(portal.totalExpenses)} hint="CFS categories" />
         <StatCard
           icon={Wallet}
           label="Disposable income"
-          value={gbp(disposableIncome)}
+          value={gbp(portal.disposableIncome)}
           hint="Available after essentials"
           tone="positive"
         />
@@ -63,7 +64,7 @@ function FinancialInformationPage() {
           <h2 className="text-lg font-semibold">Income</h2>
           <p className="text-sm text-muted-foreground">Sources declared in your assessment</p>
           <ul className="mt-5 divide-y divide-border">
-            {incomeItems.map((item) => (
+            {portal.incomeItems.map((item) => (
               <li key={item.label} className="flex items-center justify-between gap-4 py-3 text-sm">
                 <span className="text-muted-foreground">{item.label}</span>
                 <span className="font-semibold">{gbp(item.value)}</span>
@@ -75,7 +76,7 @@ function FinancialInformationPage() {
           <h2 className="text-lg font-semibold">Expenditure</h2>
           <p className="text-sm text-muted-foreground">Essential monthly costs</p>
           <ul className="mt-5 divide-y divide-border">
-            {expenseItems.map((item) => (
+            {portal.expenseItems.map((item) => (
               <li key={item.label} className="flex items-center justify-between gap-4 py-3 text-sm">
                 <span className="text-muted-foreground">{item.label}</span>
                 <span className="font-semibold">{gbp(item.value)}</span>

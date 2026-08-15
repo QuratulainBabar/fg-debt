@@ -20,17 +20,10 @@ import { StatCard } from "@/components/portal/StatCard";
 import { StatusBadge } from "@/components/portal/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import {
-  activity,
-  cases,
-  customer,
-  disposableIncome,
-  gbp,
-  notifications,
-  statusLabels,
-  totalDebt,
-  totalIncome,
-} from "@/lib/mock-data";
+import { gbp } from "@/lib/format";
+import { getPrimaryCase, statusLabels, useClientPortal } from "@/lib/client-portal-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
+import { useClientVerification, verificationStatusLabel } from "@/lib/client-verification-api";
 import { isAssessmentComplete } from "@/lib/assessment-progress";
 import { ASSESSMENT_PATH, guardDashboardAccess } from "@/lib/assessment-guard";
 
@@ -48,12 +41,6 @@ export const Route = createFileRoute("/_portal/dashboard")({
   }),
   component: Dashboard,
 });
-
-const quickActions = [
-  { to: "/upload-documents", label: "Upload documents", icon: FileUp, hint: "1 outstanding" },
-  { to: "/verification", label: "Identity verification", icon: ShieldCheck, hint: "Verified" },
-  { to: "/messages", label: "Message my solicitor", icon: MessageSquare, hint: "1 unread" },
-];
 
 const journey = [
   { label: "Account created", done: true },
@@ -87,13 +74,66 @@ function Dashboard() {
 }
 
 function DashboardContent() {
-  const activeCases = cases.filter((c) => c.status !== "completed");
+  const { data, isLoading, isError } = useClientPortal();
+  const verificationQuery = useClientVerification();
+
+  if (isLoading || verificationQuery.isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+
+  const portal = data.portal;
+  const verification = verificationQuery.data;
+  const customer = portal.customer;
+  const primaryCase = getPrimaryCase(portal);
+  const activeCases = portal.cases.filter((c) => c.status !== "completed");
+  const progress = primaryCase?.progress ?? 0;
+  const journeyDone = primaryCase
+    ? [
+        true,
+        portal.documents.some((d) => d.status === "Verified"),
+        Boolean(portal.aiRecommendation),
+        primaryCase.status === "in_review" || primaryCase.status === "active" || primaryCase.status === "completed",
+        primaryCase.status === "completed" || primaryCase.status === "active",
+      ]
+    : journey.map((s) => s.done);
+
+  const outstandingDocs = portal.documentCategories.filter(
+    (item) => item.required > 0 && item.uploaded < item.required,
+  ).length;
+  const unreadMessages = portal.messageThread?.unreadCount ?? 0;
+  const verificationHint = verification
+    ? verification.overallStatus === "verified"
+      ? "Verified"
+      : verification.overallStatus === "failed"
+        ? "Action required"
+        : `${verificationStatusLabel(verification.overallStatus)} · ${verification.progressPercent}%`
+    : "Check status";
+
+  const quickActions = [
+    {
+      to: "/upload-documents",
+      label: "Upload documents",
+      icon: FileUp,
+      hint: outstandingDocs > 0 ? `${outstandingDocs} outstanding` : "Up to date",
+    },
+    { to: "/verification", label: "Identity verification", icon: ShieldCheck, hint: verificationHint },
+    {
+      to: "/messages",
+      label: "Message my solicitor",
+      icon: MessageSquare,
+      hint: unreadMessages > 0 ? `${unreadMessages} unread` : "No unread messages",
+    },
+  ];
+
   return (
     <>
       <PageHeader
         eyebrow={`Reference ${customer.reference}`}
         title={`Good afternoon, ${customer.firstName}`}
-        description="Your Debt Relief Order case is with a solicitor. Here's everything happening on your case right now."
+        description={
+          primaryCase
+            ? `Your ${primaryCase.title} case is with ${primaryCase.adviser}. Here's everything happening on your case right now.`
+            : "Your case overview will appear here once a matter has been opened for you."
+        }
         actions={
           <Button asChild variant="outline">
             <Link to="/recommendation">
@@ -103,17 +143,40 @@ function DashboardContent() {
         }
       />
 
+      {primaryCase?.status === "completed" && (
+        <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="mt-0.5 size-5 text-emerald-600" />
+            <div>
+              <h2 className="text-base font-semibold text-emerald-950 dark:text-emerald-100">Your case is closed</h2>
+              <p className="mt-1 text-sm text-emerald-900/80 dark:text-emerald-200/80">
+                Your solicitor has formally closed this matter. Your advice pack and closing letter remain available in
+                Advice and Documents.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/advice">View advice</Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/documents">Document pack</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={CreditCard} label="Total debt" value={gbp(totalDebt)} hint="7 creditors" tone="deep" />
-        <StatCard icon={Wallet} label="Monthly income" value={gbp(totalIncome)} hint="Verified from payslips" />
+        <StatCard icon={CreditCard} label="Total debt" value={gbp(portal.totalDebt)} hint={`${portal.priorityDebts.length + portal.nonPriorityDebts.length} creditors`} tone="deep" />
+        <StatCard icon={Wallet} label="Monthly income" value={gbp(portal.totalIncome)} hint="From your submitted information" />
         <StatCard
           icon={PiggyBank}
           label="Disposable income"
-          value={gbp(disposableIncome)}
-          hint="+£64 vs last month"
+          value={gbp(portal.disposableIncome)}
+          hint="Monthly surplus after expenses"
           tone="positive"
         />
-        <StatCard icon={Clock} label="Review stage" value="48 hrs" hint="Typical turnaround" tone="warning" />
+        <StatCard icon={Clock} label="Review stage" value={primaryCase ? `${progress}%` : "—"} hint={primaryCase ? statusLabels[primaryCase.status] : "No active case"} tone="warning" />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.6fr_1fr]">
@@ -122,21 +185,21 @@ function DashboardContent() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold">Your progress</h2>
-                <p className="text-sm text-muted-foreground">Stage 3 of 5 · 82% complete</p>
+                <p className="text-sm text-muted-foreground">Stage {Math.max(1, Math.round(progress / 20))} of 5 · {progress}% complete</p>
               </div>
-              <StatusBadge status="Solicitor review" />
+              <StatusBadge status={primaryCase ? statusLabels[primaryCase.status] : "Draft"} />
             </div>
-            <Progress value={82} className="mt-5 h-2" />
+            <Progress value={progress} className="mt-5 h-2" />
             <ol className="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
-              {journey.map((s) => (
+              {journey.map((s, index) => (
                 <li key={s.label} className="flex flex-col gap-2">
-                  {s.done ? (
+                  {journeyDone[index] ? (
                     <CheckCircle2 className="size-5 text-success" />
                   ) : (
                     <CircleDot className="size-5 text-muted-foreground/50" />
                   )}
                   <span
-                    className={`text-xs font-medium ${s.done ? "text-foreground" : "text-muted-foreground"}`}
+                    className={`text-xs font-medium ${journeyDone[index] ? "text-foreground" : "text-muted-foreground"}`}
                   >
                     {s.label}
                   </span>
@@ -155,7 +218,10 @@ function DashboardContent() {
               </Button>
             </div>
             <div className="mt-4 space-y-3">
-              {activeCases.map((c) => (
+              {activeCases.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No active cases yet. Complete your assessment or wait for your solicitor to open a matter.</p>
+              ) : (
+              activeCases.map((c) => (
                 <article
                   key={c.id}
                   className="hover-lift rounded-xl border border-border bg-background/60 p-4"
@@ -179,7 +245,8 @@ function DashboardContent() {
                     </Button>
                   </div>
                 </article>
-              ))}
+              ))
+              )}
             </div>
           </section>
 
@@ -219,8 +286,9 @@ function DashboardContent() {
                 </div>
               </div>
               <p className="mt-4 rounded-xl bg-primary-foreground/10 p-3 text-sm leading-relaxed">
-                Your DRO assessment looks eligible. Would you like me to explain what a Debt Relief
-                Order means for your credit file?
+                {portal.aiRecommendation
+                  ? `Your case recommendation is ${portal.aiRecommendation.solution}. Would you like me to explain what this means for your situation?`
+                  : "Your assessment is being prepared. Ask me anything about debt options while you wait."}
               </p>
             </div>
             <div className="space-y-2 p-4">
@@ -264,7 +332,7 @@ function DashboardContent() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Adviser</dt>
-                <dd className="font-medium">R. Okonkwo</dd>
+                <dd className="font-medium">{primaryCase?.adviser ?? "Pending assignment"}</dd>
               </div>
             </dl>
             <Button asChild variant="outline" className="mt-4 w-full">
@@ -280,7 +348,7 @@ function DashboardContent() {
               </Button>
             </div>
             <ul className="mt-3 space-y-3">
-              {notifications.slice(0, 3).map((n) => (
+              {portal.notifications.slice(0, 3).map((n) => (
                 <li key={n.id} className="flex gap-3">
                   <span
                     className={`mt-1.5 size-2 shrink-0 rounded-full ${n.unread ? "bg-accent" : "bg-border"}`}
@@ -298,7 +366,7 @@ function DashboardContent() {
           <section className="surface-card p-6">
             <h2 className="text-lg font-semibold">Recent activity</h2>
             <ul className="mt-4 space-y-4 border-l border-border pl-4">
-              {activity.map((a) => (
+              {portal.activity.map((a) => (
                 <li key={a.id} className="relative">
                   <span className="absolute -left-[21px] top-1.5 size-2 rounded-full bg-accent" />
                   <p className="text-sm">{a.text}</p>
@@ -308,14 +376,16 @@ function DashboardContent() {
             </ul>
           </section>
 
+          {portal.referrals.length > 0 && (
           <Link
             to="/referrals"
             className="hover-lift flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/12 p-4"
           >
             <Send className="size-5 text-primary" />
-            <span className="flex-1 text-sm font-medium">1 referral awaiting your response</span>
+            <span className="flex-1 text-sm font-medium">{portal.referrals.length} referral{portal.referrals.length === 1 ? "" : "s"} on your case</span>
             <ArrowRight className="size-4 text-muted-foreground" />
           </Link>
+          )}
         </div>
       </div>
     </>

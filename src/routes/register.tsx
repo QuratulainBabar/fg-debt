@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { setCurrentRole } from "@/lib/auth";
+import { setSession } from "@/lib/auth";
+import { registerRequest } from "@/lib/auth-api";
+import { ApiError } from "@/lib/api";
 import { resetAssessmentProgress } from "@/lib/assessment-progress";
 import { ASSESSMENT_PATH } from "@/lib/assessment-guard";
 
@@ -29,26 +31,45 @@ function RegisterPage() {
   const [errors, setErrors] = useState<Errors>({});
   const navigate = useNavigate();
 
-  const submit = (e: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
+    const firstName = String(f.get("firstName") ?? "").trim();
+    const lastName = String(f.get("lastName") ?? "").trim();
+    const email = String(f.get("email") ?? "").trim();
+    const phone = String(f.get("phone") ?? "").trim();
+    const password = String(f.get("password") ?? "");
+    const confirm = String(f.get("confirm") ?? "");
     const next: Errors = {};
-    if (!String(f.get("firstName") ?? "").trim()) next.firstName = "Enter your first name.";
-    if (!String(f.get("lastName") ?? "").trim()) next.lastName = "Enter your last name.";
-    if (!/^\S+@\S+\.\S+$/.test(String(f.get("email") ?? ""))) next.email = "Enter a valid email address.";
-    if (String(f.get("password") ?? "").length < 8) next.password = "Use at least 8 characters.";
-    if (f.get("password") !== f.get("confirm")) next.confirm = "Passwords do not match.";
+    if (!firstName) next.firstName = "Enter your first name.";
+    if (!lastName) next.lastName = "Enter your last name.";
+    if (!/^\S+@\S+\.\S+$/.test(email)) next.email = "Enter a valid email address.";
+    if (password.length < 8) next.password = "Use at least 8 characters.";
+    if (password !== confirm) next.confirm = "Passwords do not match.";
     if (!f.get("terms")) next.terms = "Please accept the terms to continue.";
     setErrors(next);
     if (Object.keys(next).length) return;
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const { user, token } = await registerRequest({
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+        confirmPassword: confirm,
+        terms: true,
+      });
       resetAssessmentProgress();
-      setCurrentRole("client");
-      setLoading(false);
+      setSession(user, token);
       toast.success("Account created", { description: "Let's start your debt assessment." });
       navigate({ to: ASSESSMENT_PATH });
-    }, 1000);
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : "Unable to create your account.";
+      toast.error("Registration failed", { description: message });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -15,6 +16,9 @@ import {
   saveAssessmentProgress,
 } from "@/lib/assessment-progress";
 import { DASHBOARD_PATH, getResumeStepIndex } from "@/lib/assessment-guard";
+import { submitAssessmentRequest } from "@/lib/client-portal-api";
+import { invalidateClientDerivedQueries } from "@/lib/client-cache";
+import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +50,7 @@ type Values = Record<string, string>;
 
 function AssessmentPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const saved = useMemo(() => getAssessmentProgress(), []);
   const [index, setIndex] = useState(() => getResumeStepIndex());
   const [highestUnlocked, setHighestUnlocked] = useState(() =>
@@ -145,16 +150,24 @@ function AssessmentPage() {
     }, 700);
   };
 
-  const submit = () => {
+  const submit = async () => {
     setSaving(true);
-    setTimeout(() => {
+    try {
+      await submitAssessmentRequest(values);
       markAssessmentSubmitted();
-      setSaving(false);
+      persist({ values, submitted: true });
+      await invalidateClientDerivedQueries(queryClient);
       toast.success("Assessment submitted", {
-        description: "Your case is now queued for AI analysis. Taking you to your dashboard.",
+        description: "Your case is now queued for solicitor review. Taking you to your dashboard.",
       });
       navigate({ to: DASHBOARD_PATH });
-    }, 1100);
+    } catch (error) {
+      toast.error("Could not submit assessment", {
+        description: error instanceof ApiError ? error.message : "Please try again in a moment.",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const answered = useMemo(() => Object.values(values).filter(Boolean).length, [values]);

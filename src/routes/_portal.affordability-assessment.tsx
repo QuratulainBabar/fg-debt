@@ -5,7 +5,9 @@ import { StatCard } from "@/components/portal/StatCard";
 import { StatusBadge } from "@/components/portal/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { disposableIncome, gbp, totalExpenses, totalIncome } from "@/lib/mock-data";
+import { useClientAffordability } from "@/lib/client-debt-options-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
+import { gbp } from "@/lib/format";
 
 export const Route = createFileRoute("/_portal/affordability-assessment")({
   head: () => ({
@@ -25,33 +27,35 @@ export const Route = createFileRoute("/_portal/affordability-assessment")({
   component: AffordabilityAssessmentPage,
 });
 
-const checks = [
-  { label: "Income verified against documents", done: true },
-  { label: "Essential expenditure within CFS guidelines", done: true },
-  { label: "Disposable income calculated", done: true },
-  { label: "Solicitor affordability sign-off", done: false },
-];
-
 function AffordabilityAssessmentPage() {
-  const rate = Math.round((disposableIncome / totalIncome) * 100);
+  const { data, isLoading, isError } = useClientAffordability();
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+
   return (
     <>
       <PageHeader
         eyebrow="My journey"
         title="Affordability assessment"
         description="We compare your income and essential spending to work out a sustainable surplus for creditors — using Standard Financial Statement categories."
-        actions={<StatusBadge status="In review" />}
+        actions={<StatusBadge status={data.statusLabel} />}
       />
 
+      {!data.matterId && (
+        <section className="surface-card mb-6 border-warning/40 bg-warning/8 p-5 text-sm text-muted-foreground">
+          Submit your debt assessment to calculate affordability from your income and expenditure.
+        </section>
+      )}
+
       <div className="grid gap-5 sm:grid-cols-3">
-        <StatCard icon={Calculator} label="Income" value={gbp(totalIncome)} hint="Monthly net" />
-        <StatCard icon={Calculator} label="Essentials" value={gbp(totalExpenses)} hint="Allowed expenditure" />
+        <StatCard icon={Calculator} label="Income" value={gbp(data.totalIncome)} hint="Monthly net" />
+        <StatCard icon={Calculator} label="Essentials" value={gbp(data.totalExpenses)} hint="Allowed expenditure" />
         <StatCard
           icon={Calculator}
           label="Surplus"
-          value={gbp(disposableIncome)}
-          hint={`${rate}% of income`}
-          tone="positive"
+          value={gbp(data.disposableIncome)}
+          hint={`${data.surplusRate}% of income`}
+          tone={data.disposableIncome >= 0 ? "positive" : "warning"}
         />
       </div>
 
@@ -61,17 +65,17 @@ function AffordabilityAssessmentPage() {
           <p className="text-sm text-muted-foreground">
             Progress toward solicitor-ready affordability confirmation
           </p>
-          <Progress value={75} className="mt-5 h-2" />
+          <Progress value={data.progressPercent} className="mt-5 h-2" />
           <ul className="mt-6 space-y-3">
-            {checks.map((c) => (
+            {data.checks.map((check) => (
               <li
-                key={c.label}
+                key={check.label}
                 className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm"
               >
                 <CheckCircle2
-                  className={`size-4 shrink-0 ${c.done ? "text-success" : "text-muted-foreground"}`}
+                  className={`size-4 shrink-0 ${check.done ? "text-success" : "text-muted-foreground"}`}
                 />
-                <span className={c.done ? "font-medium" : "text-muted-foreground"}>{c.label}</span>
+                <span className={check.done ? "font-medium" : "text-muted-foreground"}>{check.label}</span>
               </li>
             ))}
           </ul>
@@ -90,11 +94,7 @@ function AffordabilityAssessmentPage() {
             <Info className="mt-0.5 size-4 shrink-0 text-accent" />
             <div>
               <h3 className="text-sm font-semibold">What this means</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Your current surplus of {gbp(disposableIncome)} per month sits within Debt Relief
-                Order disposable income limits. If income rises before an application is made, your
-                solicitor will recalculate suitability.
-              </p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{data.insight}</p>
             </div>
           </div>
         </aside>

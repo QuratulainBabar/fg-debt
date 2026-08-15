@@ -1,5 +1,4 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -11,6 +10,7 @@ import {
   Filter,
   Flame,
   Layers,
+  Loader2,
   ShieldAlert,
   UserCheck,
 } from "lucide-react";
@@ -19,7 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { INITIAL_MATTERS, getKPIMetrics, Matter } from "@/lib/solicitor-data";
+import { getMatterListKpis, useSolicitorMetrics } from "@/lib/matters-api";
+import { ComplianceAlertsSummaryStrip } from "@/components/solicitor/ComplianceAlertsPanel";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/_solicitor/solicitor/")({
@@ -33,27 +34,37 @@ export const Route = createFileRoute("/_solicitor/solicitor/")({
 });
 
 function SolicitorDashboardPage() {
-  const [matters] = useState<Matter[]>(INITIAL_MATTERS);
-  const metrics = getKPIMetrics(matters);
+  const { data, isLoading, isError } = useSolicitorMetrics();
+  const metrics = data?.metrics;
+  const kpis = metrics?.kpis;
+  const trends = metrics?.trends ?? { activeMattersTrend: "—", newMattersThisWeek: 0 };
+  const fallbackKpis = getMatterListKpis([]);
+  const solutionData = (metrics?.charts.solutions ?? []).map((entry, index) => ({
+    ...entry,
+    color: ["#10B981", "#3B82F6", "#8B5CF6", "#F59E0B"][index] ?? "#64748B",
+  }));
+  const riskData = (metrics?.charts.risk ?? []).map((entry, index) => ({
+    ...entry,
+    fill: ["#10B981", "#3B82F6", "#F59E0B", "#EF4444"][index] ?? "#64748B",
+  }));
+  const urgentQueue = metrics?.urgentQueue ?? [];
   const navigate = useNavigate();
 
-  const solutionData = [
-    { name: "Debt Relief Order (DRO)", count: matters.filter((m) => m.aiRecommendedSolution.includes("DRO")).length, color: "#10B981" },
-    { name: "IVA", count: matters.filter((m) => m.aiRecommendedSolution.includes("IVA")).length, color: "#3B82F6" },
-    { name: "DMP", count: matters.filter((m) => m.aiRecommendedSolution.includes("DMP")).length, color: "#8B5CF6" },
-    { name: "Breathing Space", count: matters.filter((m) => m.aiRecommendedSolution.includes("Breathing")).length, color: "#F59E0B" },
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" /> Loading matters…
+      </div>
+    );
+  }
 
-  const riskData = [
-    { level: "Low Risk", count: matters.filter((m) => m.riskLevel === "low").length, fill: "#10B981" },
-    { level: "Medium Risk", count: matters.filter((m) => m.riskLevel === "medium").length, fill: "#3B82F6" },
-    { level: "High Risk", count: matters.filter((m) => m.riskLevel === "high").length, fill: "#F59E0B" },
-    { level: "Critical Risk", count: matters.filter((m) => m.riskLevel === "critical").length, fill: "#EF4444" },
-  ];
-
-  const urgentQueue = matters.filter(
-    (m) => m.status === "urgent_review" || m.riskLevel === "critical" || m.status === "awaiting_review"
-  );
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-destructive">
+        Unable to load portfolio metrics. Confirm you are signed in as a solicitor and that the API is running.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-10">
@@ -86,26 +97,30 @@ function SolicitorDashboardPage() {
         </div>
       </div>
 
+      <ComplianceAlertsSummaryStrip />
+
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Key Performance Metrics
           </h2>
-          <span className="text-xs text-muted-foreground">Updated in real-time</span>
+          <span className="text-xs text-muted-foreground">
+            {metrics?.generatedAt ? `Updated ${metrics.generatedAt}` : "Updated in real-time"}
+          </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5">
           <SolicitorStatCard
             label="Active Matters"
-            value={metrics.activeMatters}
+            value={kpis?.activeMatters ?? fallbackKpis.activeMatters}
             icon={Layers}
-            trend="+3 this week"
+            trend={trends.activeMattersTrend}
             statusColor="blue"
             onClick={() => navigate({ to: "/solicitor/matters" as any })}
           />
           <SolicitorStatCard
             label="Awaiting Review"
-            value={metrics.mattersAwaitingReview}
+            value={kpis?.mattersAwaitingReview ?? fallbackKpis.mattersAwaitingReview}
             icon={Clock}
             trend="Action Required"
             statusColor="amber"
@@ -113,7 +128,7 @@ function SolicitorDashboardPage() {
           />
           <SolicitorStatCard
             label="Urgent Matters"
-            value={metrics.urgentMatters}
+            value={kpis?.urgentMatters ?? fallbackKpis.urgentMatters}
             icon={Flame}
             trend="High Priority"
             statusColor="rose"
@@ -121,7 +136,7 @@ function SolicitorDashboardPage() {
           />
           <SolicitorStatCard
             label="High Risk Cases"
-            value={metrics.highRiskCases}
+            value={kpis?.highRiskCases ?? fallbackKpis.highRiskCases}
             icon={ShieldAlert}
             trend="Audit Flagged"
             statusColor="rose"
@@ -129,7 +144,7 @@ function SolicitorDashboardPage() {
           />
           <SolicitorStatCard
             label="Client Responses Req."
-            value={metrics.clientResponsesRequired}
+            value={kpis?.clientResponsesRequired ?? fallbackKpis.clientResponsesRequired}
             icon={UserCheck}
             trend="Pending Upload"
             statusColor="blue"
@@ -137,7 +152,7 @@ function SolicitorDashboardPage() {
           />
           <SolicitorStatCard
             label="Docs Awaiting Review"
-            value={metrics.documentsAwaitingReview}
+            value={kpis?.documentsAwaitingReview ?? fallbackKpis.documentsAwaitingReview}
             icon={FileText}
             trend="OCR Verified"
             statusColor="purple"
@@ -145,7 +160,7 @@ function SolicitorDashboardPage() {
           />
           <SolicitorStatCard
             label="Advice Awaiting Appr."
-            value={metrics.adviceAwaitingApproval}
+            value={kpis?.adviceAwaitingApproval ?? fallbackKpis.adviceAwaitingApproval}
             icon={FileCheck}
             trend="Sign-off Ready"
             statusColor="emerald"
@@ -153,7 +168,7 @@ function SolicitorDashboardPage() {
           />
           <SolicitorStatCard
             label="Overdue Tasks"
-            value={metrics.overdueTasks}
+            value={kpis?.overdueTasks ?? fallbackKpis.overdueTasks}
             icon={Clock3}
             trend="Immediate"
             statusColor="rose"
@@ -161,6 +176,27 @@ function SolicitorDashboardPage() {
           />
         </div>
       </div>
+
+      {kpis && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          <SolicitorStatCard
+            label="Completed Matters"
+            value={kpis.completedMatters}
+            icon={FileCheck}
+            trend={kpis.avgCloseTimeDays !== null ? `Avg close ${kpis.avgCloseTimeDays}d` : "No closures yet"}
+            statusColor="emerald"
+            onClick={() => navigate({ to: "/solicitor/matters" as any })}
+          />
+          <SolicitorStatCard
+            label="Referrals In Progress"
+            value={kpis.referralsInProgress}
+            icon={ArrowUpRight}
+            trend={`${kpis.newMattersLast30Days} opened (30d)`}
+            statusColor="blue"
+            onClick={() => navigate({ to: "/solicitor/referrals" as any })}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-6 lg:col-span-1">
@@ -247,7 +283,7 @@ function SolicitorDashboardPage() {
                 </CardDescription>
               </div>
               <Button asChild variant="outline" size="sm" className="text-xs rounded-lg">
-                <Link to="/solicitor/matters">View All ({matters.length})</Link>
+                <Link to="/solicitor/matters">View All ({kpis?.totalMatters ?? urgentQueue.length})</Link>
               </Button>
             </CardHeader>
             <CardContent className="p-0">

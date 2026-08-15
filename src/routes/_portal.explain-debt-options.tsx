@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/portal/PageHeader";
 import { Button } from "@/components/ui/button";
+import { useClientDebtOptions } from "@/lib/client-debt-options-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
 
 export const Route = createFileRoute("/_portal/explain-debt-options")({
   head: () => ({
@@ -21,26 +23,11 @@ export const Route = createFileRoute("/_portal/explain-debt-options")({
   component: ExplainDebtOptionsPage,
 });
 
-const topics = [
-  {
-    title: "Debt Relief Order (DRO)",
-    body: "A formal insolvency option that freezes qualifying debts for 12 months, then writes them off if your circumstances do not improve.",
-  },
-  {
-    title: "IVA",
-    body: "A legally binding agreement with creditors to repay an affordable amount over typically 5–6 years, often used when DRO limits are exceeded.",
-  },
-  {
-    title: "Debt Management Plan",
-    body: "An informal arrangement where you make a single monthly payment distributed to creditors. Interest may still apply.",
-  },
-  {
-    title: "Priority vs non-priority debts",
-    body: "Priority debts (rent, council tax, energy) carry stronger enforcement powers. Non-priority consumer credit is treated differently in advice.",
-  },
-];
-
 function ExplainDebtOptionsPage() {
+  const { data, isLoading, isError } = useClientDebtOptions();
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+
   return (
     <>
       <PageHeader
@@ -56,16 +43,28 @@ function ExplainDebtOptionsPage() {
         }
       />
 
+      {data.recommendedSolution !== "Pending assessment" && (
+        <section className="surface-card mb-6 border-accent/30 bg-accent/8 p-5 text-sm">
+          <p className="font-medium">Recommended for your case</p>
+          <p className="mt-1 text-muted-foreground">
+            {data.recommendedSolution} ({data.confidence}% confidence)
+          </p>
+        </section>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
-        {topics.map((t) => (
-          <section key={t.title} className="surface-card p-5">
+        {data.topics.map((topic) => (
+          <section
+            key={topic.title}
+            className={`surface-card p-5 ${topic.highlighted ? "ring-1 ring-accent/40" : ""}`}
+          >
             <div className="flex items-start gap-3">
               <span className="grid size-9 place-items-center rounded-lg bg-secondary/50 text-primary">
                 <BookOpen className="size-4" />
               </span>
               <div>
-                <h2 className="text-base font-semibold">{t.title}</h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t.body}</p>
+                <h2 className="text-base font-semibold">{topic.title}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{topic.body}</p>
               </div>
             </div>
           </section>

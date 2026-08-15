@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Bell, LogOut, Menu, Search, ShieldCheck, UserRound, X } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { roleDisplayLabel, roleHomePath, setCurrentRole, type UserRole } from "@/lib/auth";
-import { SOLICITOR_NOTIFICATIONS } from "@/lib/solicitor-data";
+import { getCurrentUser, roleDisplayLabel, roleHomePath, setCurrentRole, signOut, type UserRole } from "@/lib/auth";
+import { useSolicitorNotifications } from "@/lib/notifications-api";
 import { solicitorNav } from "@/lib/solicitor-nav";
 import { GlobalSearchModal } from "./GlobalSearchModal";
 import { toast } from "sonner";
@@ -116,8 +116,16 @@ function SolicitorSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 export function SolicitorShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [user, setUser] = useState(getCurrentUser);
   const navigate = useNavigate();
-  const unreadNotifs = SOLICITOR_NOTIFICATIONS.filter((n) => n.unread).length;
+  const { notifications, unreadCount } = useSolicitorNotifications();
+  const unreadNotifs = unreadCount;
+
+  useEffect(() => {
+    const syncUser = () => setUser(getCurrentUser());
+    window.addEventListener("auth-role-change", syncUser);
+    return () => window.removeEventListener("auth-role-change", syncUser);
+  }, []);
 
   const handleRoleSwitch = (newRole: UserRole) => {
     setCurrentRole(newRole);
@@ -218,7 +226,7 @@ export function SolicitorShell({ children }: { children: ReactNode }) {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <div className="max-h-72 overflow-y-auto space-y-1 py-1">
-                    {SOLICITOR_NOTIFICATIONS.map((n) => (
+                    {notifications.slice(0, 6).map((n) => (
                       <button
                         key={n.id}
                         onClick={() => navigate({ to: `/solicitor/matters/${n.matterId}` as any })}
@@ -247,26 +255,33 @@ export function SolicitorShell({ children }: { children: ReactNode }) {
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 rounded-full border border-border bg-card py-1 pl-1 pr-3 transition-colors hover:bg-muted">
                     <span className="grid size-8 place-items-center rounded-full gradient-deep text-xs font-bold text-primary-foreground">
-                      RO
+                      {user.avatar}
                     </span>
                     <div className="hidden text-left sm:block">
-                      <span className="block text-xs font-semibold leading-tight">Rachel Okonkwo</span>
-                      <span className="block text-[0.65rem] text-muted-foreground leading-tight">Lead Solicitor</span>
+                      <span className="block text-xs font-semibold leading-tight">{user.name}</span>
+                      <span className="block text-[0.65rem] text-muted-foreground leading-tight">{user.title}</span>
                     </div>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
-                    <span className="block text-sm font-semibold">Rachel Okonkwo</span>
-                    <span className="block text-xs text-muted-foreground">solicitor@gmail.com</span>
-                    <span className="block text-[0.68rem] text-primary mt-0.5">SRA Reg #: 629104</span>
+                    <span className="block text-sm font-semibold">{user.name}</span>
+                    <span className="block text-xs text-muted-foreground">{user.email}</span>
+                    {user.sraNumber ? (
+                      <span className="block text-[0.68rem] text-primary mt-0.5">SRA Reg #: {user.sraNumber.replace(/^SRA-/, "")}</span>
+                    ) : null}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => handleRoleSwitch("client")}>
                     <UserRound className="size-4 mr-2" /> Switch to Client View
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate({ to: "/login" })}>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      await signOut();
+                      navigate({ to: "/login" });
+                    }}
+                  >
                     <LogOut className="size-4 mr-2" /> Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>

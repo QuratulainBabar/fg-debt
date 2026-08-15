@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   ClipboardList,
+  Clock3,
   Cloud,
   CreditCard,
   FileCheck2,
@@ -28,6 +29,8 @@ import {
   Mail,
   Network,
   PieChart,
+  PiggyBank,
+  Plug,
   Scale,
   ScanLine,
   ScrollText,
@@ -61,6 +64,7 @@ export const solicitorNav: SolicitorNavGroup[] = [
     items: [
       { to: "/solicitor", label: "Dashboard", icon: LayoutGrid },
       { to: "/solicitor/matters", label: "Matter List", icon: FileStack },
+      { to: "/solicitor/settings/firm-profile", label: "Firm Profile", icon: Building2 },
       { to: "/solicitor/notifications", label: "Alerts", icon: Bell },
       { to: "/solicitor/tasks", label: "Tasks", icon: ListTodo },
     ],
@@ -108,11 +112,13 @@ export const solicitorNav: SolicitorNavGroup[] = [
     group: "AI Legal Rules Engine",
     items: [
       { to: "/solicitor/rules/legal", label: "Legal Rules", icon: Scale },
+      { to: "/solicitor/rules/financial", label: "Financial Rules", icon: PiggyBank },
       { to: "/solicitor/rules/risk", label: "Risk Rules", icon: ShieldAlert },
       { to: "/solicitor/rules/debt-solution", label: "Debt Solution Rules", icon: Gauge },
       { to: "/solicitor/rules/vulnerability", label: "Vulnerability Rules", icon: ShieldQuestion },
       { to: "/solicitor/rules/document-templates", label: "Document Templates", icon: FileText },
       { to: "/solicitor/rules/workflow-reminders", label: "Workflow & Reminders", icon: Workflow },
+      { to: "/solicitor/rules/sla", label: "SLA Rules", icon: Clock3 },
     ],
   },
   {
@@ -155,6 +161,7 @@ export const solicitorNav: SolicitorNavGroup[] = [
     group: "Compliance Engine",
     items: [
       { to: "/solicitor/audit", label: "Audit Log", icon: History },
+      { to: "/solicitor/compliance/alerts", label: "Compliance Alerts", icon: AlertTriangle },
       { to: "/solicitor/compliance/advice-history", label: "Advice History", icon: BookOpen },
       { to: "/solicitor/compliance/document-history", label: "Document History", icon: FileStack },
       { to: "/solicitor/compliance/version-control", label: "Version Control", icon: GitBranch },
@@ -176,11 +183,13 @@ export const solicitorNav: SolicitorNavGroup[] = [
       { to: "/solicitor/reports/client-satisfaction", label: "Client Satisfaction", icon: UserCheck },
       { to: "/solicitor/reports/solicitor-approval-rates", label: "Solicitor Approval Rates", icon: CheckCircle2 },
       { to: "/solicitor/reports/compliance-exceptions", label: "Compliance Exceptions", icon: AlertTriangle },
+      { to: "/solicitor/reports/vulnerability-statistics", label: "Vulnerability Statistics", icon: ShieldQuestion },
     ],
   },
   {
     group: "Integrations",
     items: [
+      { to: "/solicitor/integrations", label: "All Integrations", icon: Plug },
       { to: "/solicitor/integrations/clio", label: "Clio", icon: Building2 },
       { to: "/solicitor/integrations/xero", label: "Xero", icon: Banknote },
       { to: "/solicitor/integrations/microsoft-365", label: "Microsoft 365", icon: Cloud },

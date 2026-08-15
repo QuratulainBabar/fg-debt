@@ -14,7 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { documents, generatedDocuments } from "@/lib/mock-data";
+import { useClientPortal, downloadDocumentRequest, downloadGeneratedDocumentRequest } from "@/lib/client-portal-api";
+import { ClientPortalError, ClientPortalLoading } from "@/lib/client-portal-page";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_portal/documents")({
   head: () => ({
@@ -29,11 +31,18 @@ export const Route = createFileRoute("/_portal/documents")({
 });
 
 function DocumentsPage() {
+  const { data, isLoading, isError } = useClientPortal();
+  if (isLoading) return <ClientPortalLoading />;
+  if (isError || !data) return <ClientPortalError />;
+  return <DocumentsContent portal={data.portal} />;
+}
+
+function DocumentsContent({ portal }: { portal: import("@/lib/client-portal-api").ClientPortalData }) {
   const [query, setQuery] = useState("");
-  const uploaded = documents.filter((d) =>
+  const uploaded = portal.documents.filter((d) =>
     (d.name + d.type).toLowerCase().includes(query.toLowerCase()),
   );
-  const generated = generatedDocuments.filter((d) =>
+  const generated = portal.generatedDocuments.filter((d) =>
     (d.name + d.type).toLowerCase().includes(query.toLowerCase()),
   );
 
@@ -91,7 +100,7 @@ function DocumentsPage() {
               </TableHeader>
               <TableBody>
                 {uploaded.map((d) => (
-                  <TableRow key={d.name} className="transition-colors hover:bg-muted/60">
+                  <TableRow key={d.id} className="transition-colors hover:bg-muted/60">
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-secondary/70 text-primary">
@@ -109,7 +118,18 @@ function DocumentsPage() {
                       <StatusBadge status={d.status} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" aria-label={`Download ${d.name}`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Download ${d.name}`}
+                        onClick={() => {
+                          void downloadDocumentRequest(d.id, d.name).catch((error) => {
+                            toast.error("Download failed", {
+                              description: error instanceof Error ? error.message : "Please try again.",
+                            });
+                          });
+                        }}
+                      >
                         <Download className="size-4" />
                       </Button>
                     </TableCell>
@@ -125,7 +145,7 @@ function DocumentsPage() {
           <TabsContent value="generated">
             <ul className="grid gap-4 p-6 pt-2 md:grid-cols-2 xl:grid-cols-3">
               {generated.map((d) => (
-                <li key={d.name} className="rounded-xl border border-border p-5 transition-colors hover:border-accent">
+                <li key={d.id} className="rounded-xl border border-border p-5 transition-colors hover:border-accent">
                   <span className="grid size-10 place-items-center rounded-xl bg-accent/15 text-primary">
                     <Sparkles className="size-4" />
                   </span>
@@ -133,7 +153,19 @@ function DocumentsPage() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {d.type} · {d.date}
                   </p>
-                  <Button variant="outline" size="sm" className="mt-4 w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 w-full"
+                    disabled={d.status !== "Ready"}
+                    onClick={() => {
+                      void downloadGeneratedDocumentRequest(d.id, d.name).catch((error) => {
+                        toast.error("Download failed", {
+                          description: error instanceof Error ? error.message : "Please try again.",
+                        });
+                      });
+                    }}
+                  >
                     <Download className="size-4" /> Download
                   </Button>
                 </li>

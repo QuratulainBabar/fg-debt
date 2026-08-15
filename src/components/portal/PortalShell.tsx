@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Activity,
@@ -39,7 +39,8 @@ import {
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { customer, notifications } from "@/lib/mock-data";
+import { useClientPortal } from "@/lib/client-portal-api";
+import { getCurrentUser, signOut } from "@/lib/auth";
 import { isAssessmentComplete } from "@/lib/assessment-progress";
 import { ASSESSMENT_PATH, DASHBOARD_PATH } from "@/lib/assessment-guard";
 import {
@@ -245,16 +246,25 @@ function SidebarContent({
 export function PortalShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [assessmentComplete, setAssessmentComplete] = useState(false);
+  const [user, setUser] = useState(getCurrentUser);
+  const navigate = useNavigate();
+  const { data } = useClientPortal();
+  const notifications = data?.portal.notifications ?? [];
   const unread = notifications.filter((n) => n.unread).length;
+  const firstName = user.name.split(" ")[0] ?? user.name;
 
   useEffect(() => {
     const sync = () => setAssessmentComplete(isAssessmentComplete());
+    const syncUser = () => setUser(getCurrentUser());
     sync();
+    syncUser();
     window.addEventListener("storage", sync);
     window.addEventListener("assessment-progress-change", sync);
+    window.addEventListener("auth-role-change", syncUser);
     return () => {
       window.removeEventListener("storage", sync);
       window.removeEventListener("assessment-progress-change", sync);
+      window.removeEventListener("auth-role-change", syncUser);
     };
   }, []);
 
@@ -333,18 +343,18 @@ export function PortalShell({ children }: { children: ReactNode }) {
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 rounded-full border border-border bg-card py-1 pl-1 pr-3 transition-colors hover:bg-muted">
                     <span className="grid size-8 place-items-center rounded-full gradient-deep text-xs font-bold text-primary-foreground">
-                      {customer.initials}
+                      {user.avatar}
                     </span>
-                    <span className="hidden text-sm font-medium sm:block">{customer.firstName}</span>
+                    <span className="hidden text-sm font-medium sm:block">{firstName}</span>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <span className="block text-sm font-semibold">
-                      {customer.firstName} {customer.lastName}
+                      {user.name}
                     </span>
                     <span className="block text-xs font-normal text-muted-foreground">
-                      Ref {customer.reference}
+                      {user.reference ? `Ref ${user.reference}` : user.email}
                     </span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -363,10 +373,13 @@ export function PortalShell({ children }: { children: ReactNode }) {
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  <DropdownMenuItem asChild>
-                    <Link to="/login">
-                      <LogOut className="size-4" /> Sign out
-                    </Link>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      await signOut();
+                      navigate({ to: "/login" });
+                    }}
+                  >
+                    <LogOut className="size-4" /> Sign out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
