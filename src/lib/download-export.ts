@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "" : "http://localhost:4000");
+import { API_URL } from "@/lib/api-url";
 
 export async function downloadCsvExport(path: string, fileName: string) {
   const token = typeof window !== "undefined" ? localStorage.getItem("fg_debt_token") : null;

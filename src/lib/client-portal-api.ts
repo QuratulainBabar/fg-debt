@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, apiRequest } from "@/lib/api";
+import { API_URL } from "@/lib/api-url";
 import { invalidateClientDerivedQueries } from "@/lib/client-cache";
-
-const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "" : "http://localhost:4000");
 
 export type ClientCaseStatus = "in_review" | "active" | "completed" | "action_required" | "draft";
 

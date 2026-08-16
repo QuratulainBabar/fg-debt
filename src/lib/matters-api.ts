@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
+import { API_URL } from "@/lib/api-url";
 import { invalidateSolicitorPortfolioQueries } from "@/lib/solicitor-cache";
 import type { Matter, MatterStatus, ReferralItem, RiskLevel, TaskItem, VulnerabilityFlag } from "@/lib/solicitor-data";
 
@@ -264,8 +265,6 @@ export function closeMatterRequest(
     body: payload,
   });
 }
-
-const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "" : "http://localhost:4000");
 
 export async function exportSolicitorAuditCsvRequest() {
   const token = typeof window !== "undefined" ? localStorage.getItem("fg_debt_token") : null;
